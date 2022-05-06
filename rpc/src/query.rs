@@ -56,10 +56,10 @@ use time::{Date, OffsetDateTime};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Query {
     // We can only have at most one event type at present in a query.
-    event_type: Option<EventType>,
+    pub event_type: Option<EventType>,
     // We can have zero or more additional conditions associated with a query.
     // Conditions are currently exclusively joined by logical ANDs.
-    conditions: Vec<Condition>,
+    pub conditions: Vec<Condition>,
 }
 
 impl Query {

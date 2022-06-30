@@ -3,7 +3,8 @@
 use crossbeam_channel as channel;
 
 use tendermint::evidence::{ConflictingHeadersEvidence, Evidence};
-
+use sp_std::fmt::Debug;
+use tendermint_light_client_verifier::host_functions::HostFunctionsProvider;
 use crate::errors::Error;
 use crate::evidence::EvidenceReporter;
 use crate::fork_detector::{Fork, ForkDetection, ForkDetector};
@@ -52,17 +53,20 @@ enum HandleInput {
 
 /// A light client `Instance` packages a `LightClient` together with its `State`.
 #[derive(Debug)]
-pub struct Instance {
+pub struct Instance<HostFunctions : HostFunctionsProvider> {
     /// The light client for this instance
-    pub light_client: LightClient,
+    pub light_client: LightClient<HostFunctions>,
 
     /// The state of the light client for this instance
     pub state: State,
 }
 
-impl Instance {
+impl<HostFunctions> Instance<HostFunctions>
+where
+    HostFunctions: HostFunctionsProvider,
+{
     /// Constructs a new instance from the given light client and its state.
-    pub fn new(light_client: LightClient, state: State) -> Self {
+    pub fn new(light_client: LightClient<HostFunctions>, state: State) -> Self {
         Self {
             light_client,
             state,
@@ -116,11 +120,11 @@ impl Instance {
 ///     std::thread::sleep(Duration::from_millis(800));
 /// }
 /// ```
-pub struct Supervisor {
+pub struct Supervisor<HostFunctions: HostFunctionsProvider> {
     /// List of peers and their instances (primary, witnesses, full and faulty nodes)
-    peers: PeerList<Instance>,
+    peers: PeerList<Instance<HostFunctions>>,
     /// An instance of the fork detector
-    fork_detector: Box<dyn ForkDetector>,
+    fork_detector: Box<dyn ForkDetector<HostFunctions>>,
     /// Reporter of fork evidence
     evidence_reporter: Box<dyn EvidenceReporter>,
     /// Channel through which to reply to `Handle`s
@@ -129,7 +133,10 @@ pub struct Supervisor {
     receiver: channel::Receiver<HandleInput>,
 }
 
-impl std::fmt::Debug for Supervisor {
+impl<HostFunctions> Debug for Supervisor<HostFunctions>
+where
+    HostFunctions: HostFunctionsProvider,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Supervisor")
             .field("peers", &self.peers)
@@ -138,13 +145,13 @@ impl std::fmt::Debug for Supervisor {
 }
 
 // Ensure the `Supervisor` can be sent across thread boundaries.
-static_assertions::assert_impl_all!(Supervisor: Send);
+// static_assertions::assert_impl_all!(Supervisor: Send);
 
-impl Supervisor {
+impl<HostFunctions: HostFunctionsProvider> Supervisor<HostFunctions> {
     /// Constructs a new supervisor from the given list of peers and fork detector instance.
     pub fn new(
-        peers: PeerList<Instance>,
-        fork_detector: impl ForkDetector + 'static,
+        peers: PeerList<Instance<HostFunctions>>,
+        fork_detector: impl ForkDetector<HostFunctions> + 'static,
         evidence_reporter: impl EvidenceReporter + 'static,
     ) -> Self {
         let (sender, receiver) = channel::unbounded::<HandleInput>();
@@ -434,7 +441,6 @@ mod tests {
         tests::{MockClock, MockEvidenceReporter, MockIo, TrustOptions},
     };
 
-    use crate::verifier::operations::ProdHasher;
     use crate::verifier::options::Options;
     use crate::verifier::types::Time;
     use crate::verifier::ProdVerifier;
@@ -453,6 +459,7 @@ mod tests {
     use tendermint_testgen::{
         Commit, Generator, Header, LightBlock as TestgenLightBlock, LightChain, ValidatorSet,
     };
+    use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
 
     trait IntoLightBlock {
         fn into_light_block(self) -> LightBlock;
@@ -474,7 +481,7 @@ mod tests {
         trust_options: TrustOptions,
         io: MockIo,
         now: Time,
-    ) -> Instance {
+    ) -> Instance<TestHostFunctions> {
         let trusted_height = trust_options.height;
         let trusted_state = io
             .fetch_light_block(AtHeight::At(trusted_height))
@@ -494,19 +501,19 @@ mod tests {
             clock_drift: Duration::from_secs(0),
         };
 
-        let verifier = ProdVerifier::default();
+        let verifier = ProdVerifier::<TestHostFunctions>::default();
         let clock = MockClock { now };
         let scheduler = scheduler::basic_bisecting_schedule;
         let hasher = ProdHasher::default();
 
         let light_client =
-            LightClient::new(peer_id, options, clock, scheduler, verifier, hasher, io);
+            LightClient::new(peer_id, options, clock, scheduler, verifier,  io);
 
         Instance::new(light_client, state)
     }
 
     fn run_bisection_test(
-        peer_list: PeerList<Instance>,
+        peer_list: PeerList<Instance<TestHostFunctions>>,
         height_to_verify: u64,
     ) -> (Result<LightBlock, Error>, LatestStatus) {
         let supervisor = Supervisor::new(
@@ -530,7 +537,7 @@ mod tests {
         primary: Option<Vec<LightBlock>>,
         witnesses: Option<Vec<Vec<LightBlock>>>,
         now: Time,
-    ) -> PeerList<Instance> {
+    ) -> PeerList<Instance<TestHostFunctions>> {
         let trust_options = TrustOptions {
             period: DurationStr(Duration::new(604800, 0)),
             height: Height::try_from(1_u64).expect("Error while making height"),

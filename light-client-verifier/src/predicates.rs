@@ -3,18 +3,28 @@
 use crate::errors::VerificationError;
 use crate::prelude::*;
 use crate::{
-    operations::{CommitValidator, Hasher, VotingPowerCalculator},
+    operations::{CommitValidator, VotingPowerCalculator},
+    host_functions::HostFunctionsProvider,
+    merkle::simple_hash_from_byte_vectors,
     types::{Header, SignedHeader, Time, TrustThreshold, ValidatorSet},
 };
 
+use core::marker::PhantomData;
 use core::time::Duration;
 use tendermint::{block::Height, hash::Hash};
 
 /// Production predicates, using the default implementation
 /// of the `VerificationPredicates` trait.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct ProdPredicates;
-impl VerificationPredicates for ProdPredicates {}
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
+pub struct ProdPredicates<H>(PhantomData<H>);
+impl<H: HostFunctionsProvider> VerificationPredicates<H> for ProdPredicates<H> {}
+
+
+// impl<H: HostFunctionsProvider> Default for ProdPredicates<H> {
+//     fn default() -> Self {
+//         Self(PhantomData::<H>::default())
+//     }
+// }
 
 /// Defines the various predicates used to validate and verify light blocks.
 ///
@@ -22,22 +32,22 @@ impl VerificationPredicates for ProdPredicates {}
 ///
 /// This enables test implementations to only override a single method rather than
 /// have to re-define every predicate.
-pub trait VerificationPredicates: Send + Sync {
+pub trait VerificationPredicates<H: HostFunctionsProvider>: Send + Sync {
     /// Compare the provided validator_set_hash against the hash produced from hashing the validator
     /// set.
     fn validator_sets_match(
         &self,
         validators: &ValidatorSet,
         header_validators_hash: Hash,
-        hasher: &dyn Hasher,
     ) -> Result<(), VerificationError> {
-        let validators_hash = hasher.hash_validator_set(validators);
+        let validators_hash =
+            simple_hash_from_byte_vectors::<H>(validators.serialize_to_preimage()).into();
         if header_validators_hash == validators_hash {
             Ok(())
         } else {
             Err(VerificationError::invalid_validator_set(
                 header_validators_hash,
-                validators_hash,
+                validators_hash.into(),
             ))
         }
     }
@@ -47,9 +57,9 @@ pub trait VerificationPredicates: Send + Sync {
         &self,
         next_validators: &ValidatorSet,
         header_next_validators_hash: Hash,
-        hasher: &dyn Hasher,
     ) -> Result<(), VerificationError> {
-        let next_validators_hash = hasher.hash_validator_set(next_validators);
+        let next_validators_hash =
+            simple_hash_from_byte_vectors::<H>(next_validators.serialize_to_preimage()).into();
         if header_next_validators_hash == next_validators_hash {
             Ok(())
         } else {
@@ -65,9 +75,8 @@ pub trait VerificationPredicates: Send + Sync {
         &self,
         header: &Header,
         commit_hash: Hash,
-        hasher: &dyn Hasher,
     ) -> Result<(), VerificationError> {
-        let header_hash = hasher.hash_header(header);
+        let header_hash = simple_hash_from_byte_vectors::<H>(header.serialize_to_preimage()).into();
         if header_hash == commit_hash {
             Ok(())
         } else {
@@ -166,7 +175,7 @@ pub trait VerificationPredicates: Send + Sync {
         untrusted_sh: &SignedHeader,
         trusted_validators: &ValidatorSet,
         trust_threshold: &TrustThreshold,
-        calculator: &dyn VotingPowerCalculator,
+        calculator: &dyn VotingPowerCalculator<H>,
     ) -> Result<(), VerificationError> {
         calculator.check_enough_trust(untrusted_sh, trusted_validators, *trust_threshold)?;
         Ok(())
@@ -178,7 +187,7 @@ pub trait VerificationPredicates: Send + Sync {
         &self,
         untrusted_sh: &SignedHeader,
         untrusted_validators: &ValidatorSet,
-        calculator: &dyn VotingPowerCalculator,
+        calculator: &dyn VotingPowerCalculator<H>,
     ) -> Result<(), VerificationError> {
         calculator.check_signers_overlap(untrusted_sh, untrusted_validators)?;
         Ok(())
@@ -216,14 +225,13 @@ mod tests {
     };
 
     use crate::prelude::*;
-    use crate::{
-        errors::{VerificationError, VerificationErrorDetail},
-        predicates::{ProdPredicates, VerificationPredicates},
-    };
+    use crate::{errors::{VerificationError, VerificationErrorDetail}, host_functions, predicates::{ProdPredicates, VerificationPredicates}};
 
     use crate::operations::{
-        Hasher, ProdCommitValidator, ProdHasher, ProdVotingPowerCalculator, VotingPowerTally,
+        ProdCommitValidator,  ProdVotingPowerCalculator, VotingPowerTally,
+
     };
+    use crate::host_functions::helper::TestHostFunctions;
     use crate::types::{LightBlock, TrustThreshold};
 
     impl From<TmLightBlock> for LightBlock {
@@ -243,7 +251,7 @@ mod tests {
         let header_one = Header::new(&val).generate().unwrap();
         let header_two = Header::new(&val).generate().unwrap();
 
-        let vp = ProdPredicates::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
 
         // 1. ensure valid header verifies
         let result_ok = vp.is_monotonic_bft_time(header_two.time, header_one.time);
@@ -266,7 +274,7 @@ mod tests {
         let header_one = Header::new(&val).generate().unwrap();
         let header_two = Header::new(&val).height(2).generate().unwrap();
 
-        let vp = ProdPredicates::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
 
         // 1. ensure valid header verifies
         let result_ok = vp.is_monotonic_height(header_two.height, header_one.height);
@@ -289,7 +297,7 @@ mod tests {
         let val = Validator::new("val-1");
         let header = Header::new(&[val]).generate().unwrap();
 
-        let vp = ProdPredicates::default();
+        let vp = ProdPredicates::<TestHostFunctions> ::default();
 
         // 1. ensure valid header verifies
         let mut trusting_period = Duration::new(1000, 0);
@@ -318,7 +326,7 @@ mod tests {
         let val = Validator::new("val-1");
         let header = Header::new(&[val]).generate().unwrap();
 
-        let vp = ProdPredicates::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
         let one_second = Duration::new(1, 0);
 
         let now = OffsetDateTime::now_utc().try_into().unwrap();
@@ -349,7 +357,7 @@ mod tests {
 
         let bad_validator_set = ValidatorSet::new(vec!["bad-val"]).generate().unwrap();
 
-        let vp = ProdPredicates::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
         let hasher = ProdHasher::default();
 
         // Test positive case
@@ -357,7 +365,6 @@ mod tests {
         let val_sets_match_ok = vp.validator_sets_match(
             &light_block.validators,
             light_block.signed_header.header.validators_hash,
-            &hasher,
         );
 
         assert!(val_sets_match_ok.is_ok());
@@ -366,7 +373,6 @@ mod tests {
         let next_val_sets_match_ok = vp.next_validators_match(
             &light_block.next_validators,
             light_block.signed_header.header.next_validators_hash,
-            &hasher,
         );
 
         assert!(next_val_sets_match_ok.is_ok());
@@ -378,7 +384,6 @@ mod tests {
         let val_sets_match_err = vp.validator_sets_match(
             &light_block.validators,
             light_block.signed_header.header.validators_hash,
-            &hasher,
         );
 
         match val_sets_match_err {
@@ -389,7 +394,7 @@ mod tests {
                 );
                 assert_eq!(
                     e.validators_hash,
-                    hasher.hash_validator_set(&light_block.validators)
+                    light_block.validators.hash()
                 );
             }
             _ => panic!("expected InvalidValidatorSet error"),
@@ -400,7 +405,6 @@ mod tests {
         let next_val_sets_match_err = vp.next_validators_match(
             &light_block.next_validators,
             light_block.signed_header.header.next_validators_hash,
-            &hasher,
         );
 
         match next_val_sets_match_err {
@@ -411,7 +415,7 @@ mod tests {
                 );
                 assert_eq!(
                     e.next_validators_hash,
-                    hasher.hash_validator_set(&light_block.next_validators)
+                    light_block.next_validators.hash()
                 );
             }
             _ => panic!("expected InvalidNextValidatorSet error"),
@@ -425,15 +429,11 @@ mod tests {
             .unwrap()
             .signed_header;
 
-        let vp = ProdPredicates::default();
-        let hasher = ProdHasher::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
 
         // 1. ensure valid signed header verifies
-        let result_ok = vp.header_matches_commit(
-            &signed_header.header,
-            signed_header.commit.block_id.hash,
-            &hasher,
-        );
+        let result_ok =
+            vp.header_matches_commit(&signed_header.header, signed_header.commit.block_id.hash);
 
         assert!(result_ok.is_ok());
 
@@ -442,14 +442,11 @@ mod tests {
             "15F15EF50BDE2018F4B129A827F90C18222C757770C8295EB8EE7BF50E761BC0"
                 .parse()
                 .unwrap();
-        let result_err = vp.header_matches_commit(
-            &signed_header.header,
-            signed_header.commit.block_id.hash,
-            &hasher,
-        );
+        let result_err =
+            vp.header_matches_commit(&signed_header.header, signed_header.commit.block_id.hash);
 
         // 3. ensure it fails with: VerificationVerificationError::InvalidCommitValue
-        let header_hash = hasher.hash_header(&signed_header.header);
+        let header_hash = signed_header.header.hash();
 
         match result_err {
             Err(VerificationError(VerificationErrorDetail::InvalidCommitValue(e), _)) => {
@@ -467,9 +464,9 @@ mod tests {
         let mut signed_header = light_block.signed_header;
         let val_set = light_block.validators;
 
-        let vp = ProdPredicates::default();
-        let hasher = ProdHasher::default();
-        let commit_validator = ProdCommitValidator::new(hasher);
+        let vp = ProdPredicates::<TestHostFunctions>::default();
+
+        let commit_validator = ProdCommitValidator::<TestHostFunctions>::default();
 
         // Test scenarios -->
         // 1. valid commit - must result "Ok"
@@ -544,7 +541,7 @@ mod tests {
 
                 assert_eq!(
                     e.validator_set,
-                    hasher.hash_validator_set(&val_set_with_faulty_signer)
+                    val_set_with_faulty_signer.hash()
                 );
             }
             _ => panic!("expected FaultySigner error"),
@@ -558,7 +555,7 @@ mod tests {
 
         let light_block2: LightBlock = test_lb1.next().generate().unwrap().into();
 
-        let vp = ProdPredicates::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
 
         // Test scenarios -->
         // 1. next_validator_set hash matches
@@ -605,7 +602,7 @@ mod tests {
         let val_set = light_block.validators;
         let signed_header = light_block.signed_header;
 
-        let vp = ProdPredicates::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
         let mut trust_threshold = TrustThreshold::new(1, 3).expect("Cannot make trust threshold");
         let voting_power_calculator = ProdVotingPowerCalculator::default();
 
@@ -659,7 +656,7 @@ mod tests {
         let mut light_block: LightBlock =
             TestgenLightBlock::new_default(2).generate().unwrap().into();
 
-        let vp = ProdPredicates::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
         let voting_power_calculator = ProdVotingPowerCalculator::default();
 
         // Test scenarios -->

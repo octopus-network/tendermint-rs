@@ -10,7 +10,6 @@ use tendermint_light_client::{
     store::LightStore,
     supervisor::{Handle, Instance, Supervisor},
     verifier::{
-        operations::ProdHasher,
         options::Options,
         types::{LightBlock, PeerId, Status, Time},
         ProdVerifier,
@@ -19,7 +18,7 @@ use tendermint_light_client::{
 
 use std::collections::HashMap;
 use std::time::Duration;
-
+use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
 use tendermint_light_client::store::memory::MemoryStore;
 use tendermint_light_client::tests::{
     LightClientTest, MockClock, MockEvidenceReporter, MockIo, TrustOptions,
@@ -29,7 +28,7 @@ use tendermint_testgen::Tester;
 
 const TEST_FILES_PATH: &str = "./tests/support/";
 
-fn make_instance(peer_id: PeerId, trust_options: TrustOptions, io: MockIo, now: Time) -> Instance {
+fn make_instance(peer_id: PeerId, trust_options: TrustOptions, io: MockIo, now: Time) -> Instance<TestHostFunctions> {
     let trusted_height = trust_options.height;
     let trusted_state = io
         .fetch_light_block(AtHeight::At(trusted_height))
@@ -50,11 +49,11 @@ fn make_instance(peer_id: PeerId, trust_options: TrustOptions, io: MockIo, now: 
     };
 
     let clock = MockClock { now };
-    let verifier = ProdVerifier::default();
-    let hasher = ProdHasher::default();
+    let verifier = ProdVerifier::<TestHostFunctions>::default();
+
     let scheduler = scheduler::basic_bisecting_schedule;
 
-    let light_client = LightClient::new(peer_id, options, clock, scheduler, verifier, hasher, io);
+    let light_client = LightClient::new(peer_id, options, clock, scheduler, verifier, io);
 
     Instance::new(light_client, state)
 }

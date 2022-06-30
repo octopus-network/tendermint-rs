@@ -54,6 +54,12 @@ impl From<Hash> for Vec<u8> {
     }
 }
 
+impl From<[u8; SHA256_HASH_SIZE]> for Hash {
+    fn from(value: [u8; SHA256_HASH_SIZE]) -> Self {
+        Hash::Sha256(value)
+    }
+}
+
 impl Hash {
     /// Create a new `Hash` with the given algorithm type
     pub fn from_bytes(alg: Algorithm, bytes: &[u8]) -> Result<Hash, Error> {

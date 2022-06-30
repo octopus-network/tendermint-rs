@@ -1,8 +1,12 @@
 //! Fork detection data structures and implementation.
 
 use crate::verifier::errors::ErrorExt;
-use crate::verifier::operations::{Hasher, ProdHasher};
 use crate::verifier::types::{LightBlock, PeerId, Status};
+use sp_std::marker::PhantomData;
+use tendermint::Hash;
+use tendermint_light_client_verifier::{
+    host_functions::HostFunctionsProvider, merkle::simple_hash_from_byte_vectors,
+};
 
 use crate::{
     errors::{Error, ErrorDetail},
@@ -39,14 +43,14 @@ pub enum Fork {
 }
 
 /// Interface for a fork detector
-pub trait ForkDetector: Send + Sync {
+pub trait ForkDetector<HostFunctions: HostFunctionsProvider>: Send + Sync {
     /// Detect forks using the given verified block, trusted block,
     /// and list of witnesses to verify the given light block against.
     fn detect_forks(
         &self,
         verified_block: &LightBlock,
         trusted_block: &LightBlock,
-        witnesses: Vec<&Instance>,
+        witnesses: Vec<&Instance<HostFunctions>>,
     ) -> Result<ForkDetection, Error>;
 }
 
@@ -60,36 +64,26 @@ pub trait ForkDetector: Send + Sync {
 /// - If the verification succeeds, we have a real fork
 /// - If verification fails because of lack of trust, we have a potential fork.
 /// - If verification fails for any other reason, the witness is deemed faulty.
-pub struct ProdForkDetector {
-    hasher: Box<dyn Hasher>,
-}
+#[derive(Default)]
+pub struct ProdForkDetector<HostFunctions: Default>(PhantomData<HostFunctions>);
 
-impl ProdForkDetector {
-    /// Construct a new fork detector that will use the given header hasher.
-    pub fn new(hasher: impl Hasher + 'static) -> Self {
-        Self {
-            hasher: Box::new(hasher),
-        }
-    }
-}
 
-impl Default for ProdForkDetector {
-    fn default() -> Self {
-        Self::new(ProdHasher)
-    }
-}
 
-impl ForkDetector for ProdForkDetector {
+impl<HostFunctions> ForkDetector<HostFunctions> for ProdForkDetector<HostFunctions>
+where
+    HostFunctions: HostFunctionsProvider,
+{
     /// Perform fork detection. See the documentation `ProdForkDetector` for details.
     fn detect_forks(
         &self,
         verified_block: &LightBlock,
         trusted_block: &LightBlock,
-        witnesses: Vec<&Instance>,
+        witnesses: Vec<&Instance<HostFunctions>>,
     ) -> Result<ForkDetection, Error> {
-        let primary_hash = self
-            .hasher
-            .hash_header(&verified_block.signed_header.header);
+        let primary_hash = {
+            let serialized = verified_block.signed_header.header.serialize_to_preimage();
+            Hash::Sha256(simple_hash_from_byte_vectors::<HostFunctions>(serialized))
+        };
 
         let mut forks = Vec::with_capacity(witnesses.len());
 
@@ -100,8 +94,10 @@ impl ForkDetector for ProdForkDetector {
                 .light_client
                 .get_or_fetch_block(verified_block.height(), &mut state)?;
 
-            let witness_hash = self.hasher.hash_header(&witness_block.signed_header.header);
-
+            let witness_hash = {
+                let serialized = witness_block.signed_header.header.serialize_to_preimage();
+                Hash::Sha256(simple_hash_from_byte_vectors::<HostFunctions>(serialized))
+            };
             if primary_hash == witness_hash {
                 // Hashes match, continue with next witness, if any.
                 continue;

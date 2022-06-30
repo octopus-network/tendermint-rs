@@ -19,6 +19,8 @@ use tendermint_light_client_verifier::types::{LightBlock, TrustThreshold};
 use tendermint_light_client_verifier::{ProdVerifier, Verifier};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
+use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
+use tendermint_light_client_verifier::host_functions::HostFunctionsProvider;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -31,7 +33,7 @@ static ALLOC: wee_alloc::WeeAlloc<'_> = wee_alloc::WeeAlloc::INIT;
 pub fn verify(untrusted: &JsValue, trusted: &JsValue, options: &JsValue, now: &JsValue) -> JsValue {
     let result = deserialize_params(untrusted, trusted, options, now).map(
         |(untrusted, trusted, options, now)| {
-            let verifier = ProdVerifier::default();
+            let verifier = ProdVerifier::<TestHostFunctions>::default();
             verifier.verify(
                 untrusted.as_untrusted_state(),
                 trusted.as_trusted_state(),

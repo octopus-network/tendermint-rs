@@ -31,6 +31,7 @@ use tendermint_rpc as rpc;
 use std::convert::TryFrom;
 use std::time::Duration;
 
+use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
 struct TestEvidenceReporter;
 
 #[contracts::contract_trait]
@@ -43,7 +44,7 @@ impl EvidenceReporter for TestEvidenceReporter {
     }
 }
 
-fn make_instance(peer_id: PeerId, options: LightClientOptions, address: rpc::Url) -> Instance {
+fn make_instance(peer_id: PeerId, options: LightClientOptions, address: rpc::Url) -> Instance<TestHostFunctions> {
     let rpc_client = rpc::HttpClient::new(address).unwrap();
     let io = ProdIo::new(peer_id, rpc_client.clone(), Some(Duration::from_secs(2)));
     let latest_block = io.fetch_light_block(AtHeight::Highest).unwrap();
@@ -63,7 +64,7 @@ fn make_instance(peer_id: PeerId, options: LightClientOptions, address: rpc::Url
     .build()
 }
 
-fn make_supervisor() -> Supervisor {
+fn make_supervisor() -> Supervisor<TestHostFunctions> {
     let primary: PeerId = "BADFADAD0BEFEEDC0C0ADEADBEEFC0FFEEFACADE".parse().unwrap();
     let witness: PeerId = "CEFEEDBADFADAD0C0CEEFACADE0ADEADBEEFC0FF".parse().unwrap();
 

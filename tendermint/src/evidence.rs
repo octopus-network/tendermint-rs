@@ -9,7 +9,7 @@ use core::slice;
 use serde::{Deserialize, Serialize};
 use tendermint_proto::google::protobuf::Duration as RawDuration;
 use tendermint_proto::types::evidence::Sum as RawSum;
-use tendermint_proto::types::evidence::Sum;
+// use tendermint_proto::types::evidence::Sum;
 use tendermint_proto::types::DuplicateVoteEvidence as RawDuplicateVoteEvidence;
 use tendermint_proto::types::Evidence as RawEvidence;
 use tendermint_proto::types::EvidenceList as RawEvidenceList;
@@ -44,8 +44,8 @@ impl TryFrom<RawEvidence> for Evidence {
 
     fn try_from(value: RawEvidence) -> Result<Self, Self::Error> {
         match value.sum.ok_or_else(Error::invalid_evidence)? {
-            Sum::DuplicateVoteEvidence(ev) => Ok(Evidence::DuplicateVote(ev.try_into()?)),
-            Sum::LightClientAttackEvidence(_ev) => Ok(Evidence::LightClientAttackEvidence),
+            RawSum::DuplicateVoteEvidence(ev) => Ok(Evidence::DuplicateVote(ev.try_into()?)),
+            RawSum::LightClientAttackEvidence(_ev) => Ok(Evidence::LightClientAttackEvidence),
         }
     }
 }

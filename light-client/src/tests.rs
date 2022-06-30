@@ -3,6 +3,8 @@
 use serde::{Deserialize, Serialize};
 use tendermint::abci::transaction::Hash;
 use tendermint_rpc as rpc;
+use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
+use tendermint_light_client_verifier::Verifier;
 
 use crate::components::clock::Clock;
 use crate::components::io::{AtHeight, Io, IoError};
@@ -14,7 +16,7 @@ use crate::verifier::options::Options;
 use crate::verifier::types::{
     Height, LightBlock, PeerId, SignedHeader, Time, TrustThreshold, ValidatorSet,
 };
-use crate::verifier::{ProdVerifier, Verdict, Verifier};
+use crate::verifier::{ProdVerifier, Verdict};
 use contracts::contract_trait;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -145,7 +147,7 @@ pub fn verify_single(
     clock_drift: Duration,
     now: Time,
 ) -> Result<LightBlock, Verdict> {
-    let verifier = ProdVerifier::default();
+    let verifier = ProdVerifier::<TestHostFunctions>::default();
 
     let options = Options {
         trust_threshold,
@@ -168,7 +170,7 @@ pub fn verify_single(
 
 pub fn verify_bisection(
     untrusted_height: Height,
-    light_client: &mut LightClient,
+    light_client: &mut LightClient<TestHostFunctions>,
     state: &mut State,
 ) -> Result<Vec<LightBlock>, Error> {
     light_client

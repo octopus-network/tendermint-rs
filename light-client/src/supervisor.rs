@@ -2,9 +2,6 @@
 
 use crossbeam_channel as channel;
 
-use tendermint::evidence::{ConflictingHeadersEvidence, Evidence};
-use sp_std::fmt::Debug;
-use tendermint_light_client_verifier::host_functions::HostFunctionsProvider;
 use crate::errors::Error;
 use crate::evidence::EvidenceReporter;
 use crate::fork_detector::{Fork, ForkDetection, ForkDetector};
@@ -12,6 +9,9 @@ use crate::light_client::LightClient;
 use crate::peer_list::PeerList;
 use crate::state::State;
 use crate::verifier::types::{Height, LatestStatus, LightBlock, PeerId, Status};
+use sp_std::fmt::Debug;
+use tendermint::evidence::{ConflictingHeadersEvidence, Evidence};
+use tendermint_light_client_verifier::host_functions::HostFunctionsProvider;
 
 /// Provides an interface to the supervisor for use in downstream code.
 pub trait Handle: Send + Sync {
@@ -53,7 +53,7 @@ enum HandleInput {
 
 /// A light client `Instance` packages a `LightClient` together with its `State`.
 #[derive(Debug)]
-pub struct Instance<HostFunctions : HostFunctionsProvider> {
+pub struct Instance<HostFunctions: HostFunctionsProvider> {
     /// The light client for this instance
     pub light_client: LightClient<HostFunctions>,
 
@@ -450,6 +450,7 @@ mod tests {
     use tendermint::block::Height;
     use tendermint::evidence::Duration as DurationStr;
     use tendermint::trust_threshold::TrustThresholdFraction;
+    use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
     use tendermint_rpc::{
         self as rpc,
         response_error::{Code, ResponseError},
@@ -459,7 +460,6 @@ mod tests {
     use tendermint_testgen::{
         Commit, Generator, Header, LightBlock as TestgenLightBlock, LightChain, ValidatorSet,
     };
-    use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
 
     trait IntoLightBlock {
         fn into_light_block(self) -> LightBlock;
@@ -506,8 +506,7 @@ mod tests {
         let scheduler = scheduler::basic_bisecting_schedule;
         let hasher = ProdHasher::default();
 
-        let light_client =
-            LightClient::new(peer_id, options, clock, scheduler, verifier,  io);
+        let light_client = LightClient::new(peer_id, options, clock, scheduler, verifier, io);
 
         Instance::new(light_client, state)
     }

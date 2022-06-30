@@ -2,9 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 use tendermint::abci::transaction::Hash;
-use tendermint_rpc as rpc;
 use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
 use tendermint_light_client_verifier::Verifier;
+use tendermint_rpc as rpc;
 
 use crate::components::clock::Clock;
 use crate::components::io::{AtHeight, Io, IoError};

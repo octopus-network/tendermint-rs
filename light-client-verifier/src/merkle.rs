@@ -26,7 +26,7 @@ fn simple_hash_from_byte_slices_inner<H: HostFunctionsProvider>(byte_slices: &[V
             let left = simple_hash_from_byte_slices_inner::<H>(&byte_slices[..k]);
             let right = simple_hash_from_byte_slices_inner::<H>(&byte_slices[k..]);
             inner_hash::<H>(&left, &right)
-        },
+        }
     }
 }
 

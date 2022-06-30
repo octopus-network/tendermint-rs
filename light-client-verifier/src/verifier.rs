@@ -1,6 +1,5 @@
 //! Provides an interface and default implementation of the `Verifier` component
 
-use core::marker::PhantomData;
 use crate::errors::{ErrorExt, VerificationError, VerificationErrorDetail};
 use crate::operations::voting_power::VotingPowerTally;
 use crate::predicates as preds;
@@ -8,12 +7,12 @@ use crate::types::{TrustedBlockState, UntrustedBlockState};
 use crate::{
     host_functions::HostFunctionsProvider,
     operations::{
-        CommitValidator, ProdCommitValidator, ProdVotingPowerCalculator,
-        VotingPowerCalculator,
+        CommitValidator, ProdCommitValidator, ProdVotingPowerCalculator, VotingPowerCalculator,
     },
     options::Options,
     types::Time,
 };
+use core::marker::PhantomData;
 use preds::{ProdPredicates, VerificationPredicates};
 use serde::{Deserialize, Serialize};
 

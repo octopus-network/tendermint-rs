@@ -18,17 +18,22 @@ use tendermint_light_client::{
 
 use std::collections::HashMap;
 use std::time::Duration;
-use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
 use tendermint_light_client::store::memory::MemoryStore;
 use tendermint_light_client::tests::{
     LightClientTest, MockClock, MockEvidenceReporter, MockIo, TrustOptions,
 };
+use tendermint_light_client_verifier::host_functions::helper::TestHostFunctions;
 
 use tendermint_testgen::Tester;
 
 const TEST_FILES_PATH: &str = "./tests/support/";
 
-fn make_instance(peer_id: PeerId, trust_options: TrustOptions, io: MockIo, now: Time) -> Instance<TestHostFunctions> {
+fn make_instance(
+    peer_id: PeerId,
+    trust_options: TrustOptions,
+    io: MockIo,
+    now: Time,
+) -> Instance<TestHostFunctions> {
     let trusted_height = trust_options.height;
     let trusted_state = io
         .fetch_light_block(AtHeight::At(trusted_height))

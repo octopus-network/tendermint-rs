@@ -1,8 +1,5 @@
 //! DSL for building a light client [`Instance`]
 
-use tendermint::{block::Height, Hash};
-use sp_std::marker::PhantomData;
-use tendermint_light_client_verifier::merkle::simple_hash_from_byte_vectors;
 use crate::builder::error::Error;
 use crate::components::clock::Clock;
 use crate::components::io::{AtHeight, Io};
@@ -15,6 +12,9 @@ use crate::verifier::options::Options;
 use crate::verifier::predicates::VerificationPredicates;
 use crate::verifier::types::{LightBlock, PeerId, Status};
 use crate::verifier::Verifier;
+use sp_std::marker::PhantomData;
+use tendermint::{block::Height, Hash};
+use tendermint_light_client_verifier::merkle::simple_hash_from_byte_vectors;
 
 #[cfg(feature = "rpc-client")]
 use {
@@ -22,8 +22,8 @@ use {
     crate::components::io::ProdIo,
     crate::components::scheduler,
     crate::verifier::{
-        host_functions::HostFunctionsProvider,
-        predicates::ProdPredicates, ProdVerifier},
+        host_functions::HostFunctionsProvider, predicates::ProdPredicates, ProdVerifier,
+    },
     core::time::Duration,
     tendermint_rpc as rpc,
 };
@@ -135,7 +135,9 @@ where
 
     /// Keep using the latest verified or trusted block in the light store.
     /// Such a block must exists otherwise this will fail.
-    pub fn trust_from_store(self) -> Result<LightClientBuilder<HasTrustedState, HostFunctions>, Error> {
+    pub fn trust_from_store(
+        self,
+    ) -> Result<LightClientBuilder<HasTrustedState, HostFunctions>, Error> {
         let trusted_state = self
             .light_store
             .highest_trusted_or_verified()

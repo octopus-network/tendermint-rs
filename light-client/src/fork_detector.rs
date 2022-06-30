@@ -67,8 +67,6 @@ pub trait ForkDetector<HostFunctions: HostFunctionsProvider>: Send + Sync {
 #[derive(Default)]
 pub struct ProdForkDetector<HostFunctions: Default>(PhantomData<HostFunctions>);
 
-
-
 impl<HostFunctions> ForkDetector<HostFunctions> for ProdForkDetector<HostFunctions>
 where
     HostFunctions: HostFunctionsProvider,

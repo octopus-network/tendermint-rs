@@ -3,9 +3,9 @@
 use crate::errors::VerificationError;
 use crate::prelude::*;
 use crate::{
-    operations::{CommitValidator, VotingPowerCalculator},
     host_functions::HostFunctionsProvider,
     merkle::simple_hash_from_byte_vectors,
+    operations::{CommitValidator, VotingPowerCalculator},
     types::{Header, SignedHeader, Time, TrustThreshold, ValidatorSet},
 };
 
@@ -18,7 +18,6 @@ use tendermint::{block::Height, hash::Hash};
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub struct ProdPredicates<H>(PhantomData<H>);
 impl<H: HostFunctionsProvider> VerificationPredicates<H> for ProdPredicates<H> {}
-
 
 // impl<H: HostFunctionsProvider> Default for ProdPredicates<H> {
 //     fn default() -> Self {
@@ -225,13 +224,14 @@ mod tests {
     };
 
     use crate::prelude::*;
-    use crate::{errors::{VerificationError, VerificationErrorDetail}, host_functions, predicates::{ProdPredicates, VerificationPredicates}};
-
-    use crate::operations::{
-        ProdCommitValidator,  ProdVotingPowerCalculator, VotingPowerTally,
-
+    use crate::{
+        errors::{VerificationError, VerificationErrorDetail},
+        host_functions,
+        predicates::{ProdPredicates, VerificationPredicates},
     };
+
     use crate::host_functions::helper::TestHostFunctions;
+    use crate::operations::{ProdCommitValidator, ProdVotingPowerCalculator, VotingPowerTally};
     use crate::types::{LightBlock, TrustThreshold};
 
     impl From<TmLightBlock> for LightBlock {
@@ -297,7 +297,7 @@ mod tests {
         let val = Validator::new("val-1");
         let header = Header::new(&[val]).generate().unwrap();
 
-        let vp = ProdPredicates::<TestHostFunctions> ::default();
+        let vp = ProdPredicates::<TestHostFunctions>::default();
 
         // 1. ensure valid header verifies
         let mut trusting_period = Duration::new(1000, 0);
@@ -392,10 +392,7 @@ mod tests {
                     e.header_validators_hash,
                     light_block.signed_header.header.validators_hash
                 );
-                assert_eq!(
-                    e.validators_hash,
-                    light_block.validators.hash()
-                );
+                assert_eq!(e.validators_hash, light_block.validators.hash());
             }
             _ => panic!("expected InvalidValidatorSet error"),
         }
@@ -413,10 +410,7 @@ mod tests {
                     e.header_next_validators_hash,
                     light_block.signed_header.header.next_validators_hash
                 );
-                assert_eq!(
-                    e.next_validators_hash,
-                    light_block.next_validators.hash()
-                );
+                assert_eq!(e.next_validators_hash, light_block.next_validators.hash());
             }
             _ => panic!("expected InvalidNextValidatorSet error"),
         }
@@ -539,10 +533,7 @@ mod tests {
                         .unwrap()
                 );
 
-                assert_eq!(
-                    e.validator_set,
-                    val_set_with_faulty_signer.hash()
-                );
+                assert_eq!(e.validator_set, val_set_with_faulty_signer.hash());
             }
             _ => panic!("expected FaultySigner error"),
         }

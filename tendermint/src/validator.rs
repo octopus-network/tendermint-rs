@@ -131,8 +131,7 @@ impl Set {
 
     /// Serialize the validator set to the perimage bytes
     pub fn serialize_to_preimage(&self) -> Vec<Vec<u8>> {
-        self
-            .validators()
+        self.validators()
             .iter()
             .map(|validator| validator.hash_bytes())
             .collect()

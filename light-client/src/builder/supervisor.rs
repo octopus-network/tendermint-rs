@@ -128,9 +128,11 @@ where
 
     /// Get the underlying list of instances and addresses.
     #[must_use]
-    pub fn inner(self) -> (
+    pub fn inner(
+        self,
+    ) -> (
         PeerList<Instance<HostFunctions>>,
-        PeerList<tendermint_rpc::Url>
+        PeerList<tendermint_rpc::Url>,
     ) {
         (self.instances.build(), self.addresses.build())
     }

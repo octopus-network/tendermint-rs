@@ -99,7 +99,7 @@ where
             scheduler,
             verifier,
             io,
-           _phantom: PhantomData,
+            _phantom: PhantomData,
         }
     }
 

@@ -27,12 +27,11 @@ pub mod helper {
         fn ed25519_verify(sig: &[u8], msg: &[u8], pub_key: &[u8]) -> Result<(), ()> {
             use sp_core::{ed25519, ByteArray, Pair};
 
-            let signature = ed25519::Signature::from_slice(sig)
-                .ok_or(())?;
+            let signature = ed25519::Signature::from_slice(sig).ok_or(())?;
 
             let public_key = ed25519::Public::from_slice(pub_key).map_err(|_| ())?;
             if ed25519::Pair::verify(&signature, msg, &public_key) {
-                return Ok(())
+                return Ok(());
             }
 
             Err(())
@@ -43,7 +42,7 @@ pub mod helper {
 
             let public = ecdsa::Public::from_slice(public).map_err(|_| ())?;
             if ecdsa::Pair::verify_weak(&sig, message, &public) {
-                return Ok(())
+                return Ok(());
             }
 
             Err(())
@@ -51,11 +50,10 @@ pub mod helper {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::host_functions::{helper::TestHostFunctions, HostFunctionsProvider};
     use hex_literal::hex;
-    use crate::host_functions::{HostFunctionsProvider, helper::TestHostFunctions};
 
     #[test]
     #[should_panic]

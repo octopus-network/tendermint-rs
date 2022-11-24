@@ -1,38 +1,36 @@
 use std::io::Error as IoError;
 
-use flex_error::{define_error, DisplayOnly, TraceError};
+use displaydoc::Display;
 use tendermint::Error as TendermintError;
 
-define_error! {
-    #[derive(Debug, Clone, PartialEq, Eq)]
-    Error {
-        Io
-            [ DisplayOnly<IoError> ]
-            |_| { format_args!("I/O error") },
+#[derive(Debug, Display)]
+pub enum Error {
+    /// I/O error
+    Io(IoError),
+    /// failed to open file: `{path}`
+    FileIo { path: String, e: IoError },
+    /// error parsing data: `{data}`
+    Parse { data: String },
+    /// serde json error
+    SerdeJson(serde_json::Error),
+    /// toml de error
+    Toml(toml::de::Error),
+    /// error parsing url error
+    ParseUrl(url::ParseError),
+    /// endermint error
+    Tendermint(TendermintError),
+}
 
-        FileIo
-            { path: String }
-            [ DisplayOnly<IoError> ]
-            |e| { format_args!("failed to open file: {}", e.path) },
-
-        Parse
-            { data: String }
-            | e | { format_args!("error parsing data: {}", e.data) },
-
-        SerdeJson
-            [ DisplayOnly<serde_json::Error> ]
-            |_| { format_args!("serde json error") },
-
-        Toml
-            [ DisplayOnly<toml::de::Error> ]
-            |_| { format_args!("toml de error") },
-
-        ParseUrl
-            [ DisplayOnly<url::ParseError> ]
-            |_| { format_args!("error parsing url error") },
-
-        Tendermint
-            [ TraceError<TendermintError> ]
-            |_| { format_args!("tendermint error") },
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::Io(e) => Some(e),
+            Error::FileIo { e, .. } => Some(e),
+            Error::Parse { .. } => None,
+            Error::SerdeJson(e) => Some(e),
+            Error::Toml(e) => Some(e),
+            Error::ParseUrl(e) => Some(e),
+            Error::Tendermint(e) => Some(e),
+        }
     }
 }

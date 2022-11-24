@@ -107,7 +107,7 @@ pub struct TendermintConfig {
 impl TendermintConfig {
     /// Parse Tendermint `config.toml`
     pub fn parse_toml<T: AsRef<str>>(toml_string: T) -> Result<Self, Error> {
-        let res = toml::from_str(toml_string.as_ref()).map_err(Error::toml)?;
+        let res = toml::from_str(toml_string.as_ref()).map_err(Error::Toml)?;
 
         Ok(res)
     }
@@ -117,8 +117,10 @@ impl TendermintConfig {
     where
         P: AsRef<Path>,
     {
-        let toml_string = fs::read_to_string(path)
-            .map_err(|e| Error::file_io(format!("{}", path.as_ref().display()), e))?;
+        let toml_string = fs::read_to_string(path).map_err(|e| Error::FileIo {
+            path: format!("{}", path.as_ref().display()),
+            e,
+        })?;
 
         Self::parse_toml(toml_string)
     }
@@ -126,10 +128,12 @@ impl TendermintConfig {
     /// Load `genesis.json` file from the configured location
     pub fn load_genesis_file(&self, home: impl AsRef<Path>) -> Result<Genesis, Error> {
         let path = home.as_ref().join(&self.genesis_file);
-        let genesis_json = fs::read_to_string(&path)
-            .map_err(|e| Error::file_io(format!("{}", path.display()), e))?;
+        let genesis_json = fs::read_to_string(&path).map_err(|e| Error::FileIo {
+            path: format!("{}", path.display()),
+            e,
+        })?;
 
-        let res = serde_json::from_str(genesis_json.as_ref()).map_err(Error::serde_json)?;
+        let res = serde_json::from_str(genesis_json.as_ref()).map_err(Error::SerdeJson)?;
 
         Ok(res)
     }
@@ -269,17 +273,18 @@ impl FromStr for LogLevel {
                 global = Some(parts[0].to_owned());
                 continue;
             } else if parts.len() != 2 {
-                return Err(Error::parse(format!("error parsing log level: {}", level)));
+                return Err(Error::Parse {
+                    data: format!("error parsing log level: {}", level),
+                });
             }
 
             let key = parts[0].to_owned();
             let value = parts[1].to_owned();
 
             if components.insert(key, value).is_some() {
-                return Err(Error::parse(format!(
-                    "duplicate log level setting for: {}",
-                    level
-                )));
+                return Err(Error::Parse {
+                    data: format!("duplicate log level setting for: {}", level),
+                });
             }
         }
 

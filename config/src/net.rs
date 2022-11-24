@@ -93,29 +93,31 @@ impl FromStr for Address {
             // If the address has no scheme, assume it's TCP
             format!("{}{}", TCP_PREFIX, addr)
         };
-        let url = Url::parse(&prefixed_addr).map_err(Error::parse_url)?;
+        let url = Url::parse(&prefixed_addr).map_err(Error::ParseUrl)?;
         match url.scheme() {
             "tcp" => Ok(Self::Tcp {
                 peer_id: if !url.username().is_empty() {
-                    let username = url.username().parse().map_err(Error::tendermint)?;
+                    let username = url.username().parse().map_err(Error::Tendermint)?;
                     Some(username)
                 } else {
                     None
                 },
                 host: url
                     .host_str()
-                    .ok_or_else(|| {
-                        Error::parse(format!("invalid TCP address (missing host): {}", addr))
+                    .ok_or(Error::Parse {
+                        data: format!("invalid TCP address (missing host): {}", addr),
                     })?
                     .to_owned(),
-                port: url.port().ok_or_else(|| {
-                    Error::parse(format!("invalid TCP address (missing port): {}", addr))
+                port: url.port().ok_or(Error::Parse {
+                    data: format!("invalid TCP address (missing port): {}", addr),
                 })?,
             }),
             "unix" => Ok(Self::Unix {
                 path: url.path().to_string(),
             }),
-            _ => Err(Error::parse(format!("invalid address scheme: {:?}", addr))),
+            _ => Err(Error::Parse {
+                data: format!("invalid address scheme: {:?}", addr),
+            }),
         }
     }
 }

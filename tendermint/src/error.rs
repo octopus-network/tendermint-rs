@@ -148,6 +148,7 @@ impl From<core::convert::Infallible> for Error {
         unreachable!("Infallible can never be constructed")
     }
 }
+
 #[cfg(feature = "std")]
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn flex_error::StdError + 'static)> {

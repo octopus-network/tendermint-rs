@@ -35,7 +35,11 @@ impl FromStr for Scheme {
             "https" => Scheme::Https,
             "ws" => Scheme::WebSocket,
             "wss" => Scheme::SecureWebSocket,
-            _ => return Err(Error::unsupported_scheme(s.to_string())),
+            _ => {
+                return Err(Error::UnsupportedScheme {
+                    scheme: s.to_string(),
+                })
+            },
         })
     }
 }
@@ -57,17 +61,19 @@ impl FromStr for Url {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let inner: url::Url = s.parse().map_err(Error::parse_url)?;
+        let inner: url::Url = s.parse().map_err(Error::ParseUrl)?;
 
         let scheme: Scheme = inner.scheme().parse()?;
 
         let host = inner
             .host_str()
-            .ok_or_else(|| Error::invalid_params(format!("URL is missing its host: {}", s)))?
+            .ok_or_else(|| Error::InvalidParams {
+                message: format!("URL is missing its host: {}", s),
+            })?
             .to_owned();
 
-        let port = inner.port_or_known_default().ok_or_else(|| {
-            Error::invalid_params(format!("cannot determine appropriate port for URL: {}", s))
+        let port = inner.port_or_known_default().ok_or(Error::InvalidParams {
+            message: format!("cannot determine appropriate port for URL: {}", s),
         })?;
         Ok(Self {
             inner,

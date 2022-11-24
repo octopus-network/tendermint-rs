@@ -22,7 +22,7 @@ pub trait Request: Debug + DeserializeOwned + Serialize + Sized + Send {
 
     /// Parse a JSON-RPC request from a JSON string.
     fn from_string(s: impl AsRef<[u8]>) -> Result<Self, Error> {
-        let wrapper: Wrapper<Self> = serde_json::from_slice(s.as_ref()).map_err(Error::serde)?;
+        let wrapper: Wrapper<Self> = serde_json::from_slice(s.as_ref()).map_err(Error::Serde)?;
         Ok(wrapper.params)
     }
 }

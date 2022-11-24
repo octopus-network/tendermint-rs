@@ -104,7 +104,7 @@ impl TryFrom<Url> for HttpClientUrl {
     fn try_from(value: Url) -> Result<Self, Error> {
         match value.scheme() {
             Scheme::Http | Scheme::Https => Ok(Self(value)),
-            _ => Err(Error::invalid_url(value)),
+            _ => Err(Error::InvalidUrl { url: value }),
         }
     }
 }
@@ -136,7 +136,7 @@ impl TryFrom<net::Address> for HttpClientUrl {
                 host,
                 port,
             } => format!("http://{}:{}", host, port).parse(),
-            net::Address::Unix { .. } => Err(Error::invalid_network_address()),
+            net::Address::Unix { .. } => Err(Error::InvalidNetworkAddress),
         }
     }
 }
@@ -151,7 +151,7 @@ impl TryFrom<HttpClientUrl> for hyper::Uri {
     type Error = Error;
 
     fn try_from(value: HttpClientUrl) -> Result<Self, Error> {
-        value.0.to_string().parse().map_err(Error::invalid_uri)
+        value.0.to_string().parse().map_err(Error::InvalidUri)
     }
 }
 
@@ -190,7 +190,7 @@ mod sealed {
             R: SimpleRequest,
         {
             let request = self.build_request(request)?;
-            let response = self.inner.request(request).await.map_err(Error::hyper)?;
+            let response = self.inner.request(request).await.map_err(Error::Hyper)?;
             let response_body = response_to_string(response).await?;
             tracing::debug!("Incoming response: {}", response_body);
             R::Response::from_string(&response_body)
@@ -209,7 +209,7 @@ mod sealed {
                 .method("POST")
                 .uri(&self.uri)
                 .body(hyper::Body::from(request_body.into_bytes()))
-                .map_err(Error::http)?;
+                .map_err(Error::Http)?;
 
             {
                 let headers = request.headers_mut();
@@ -254,7 +254,7 @@ mod sealed {
         pub fn new_http_proxy(uri: Uri, proxy_uri: Uri) -> Result<Self, Error> {
             let proxy = Proxy::new(Intercept::All, proxy_uri);
             let proxy_connector =
-                ProxyConnector::from_proxy(HttpConnector::new(), proxy).map_err(Error::io)?;
+                ProxyConnector::from_proxy(HttpConnector::new(), proxy).map_err(Error::Io)?;
             Ok(Self::HttpProxy(HyperClient::new(
                 uri,
                 hyper::Client::builder().build(proxy_connector),
@@ -265,7 +265,7 @@ mod sealed {
             let proxy = Proxy::new(Intercept::All, proxy_uri);
             let proxy_connector =
                 ProxyConnector::from_proxy(HttpsConnector::with_native_roots(), proxy)
-                    .map_err(Error::io)?;
+                    .map_err(Error::Io)?;
 
             Ok(Self::HttpsProxy(HyperClient::new(
                 uri,
@@ -290,10 +290,10 @@ mod sealed {
         let mut response_body = String::new();
         hyper::body::aggregate(response.into_body())
             .await
-            .map_err(Error::hyper)?
+            .map_err(Error::Hyper)?
             .reader()
             .read_to_string(&mut response_body)
-            .map_err(Error::io)?;
+            .map_err(Error::Io)?;
 
         Ok(response_body)
     }

@@ -11,13 +11,13 @@ pub trait Response: Serialize + DeserializeOwned + Sized {
     /// Parse a JSON-RPC response from a JSON string
     fn from_string(response: impl AsRef<[u8]>) -> Result<Self, Error> {
         let wrapper: Wrapper<Self> =
-            serde_json::from_slice(response.as_ref()).map_err(Error::serde)?;
+            serde_json::from_slice(response.as_ref()).map_err(Error::Serde)?;
         wrapper.into_result()
     }
 
     /// Parse a JSON-RPC response from an `io::Reader`
     fn from_reader(reader: impl Read) -> Result<Self, Error> {
-        let wrapper: Wrapper<Self> = serde_json::from_reader(reader).map_err(Error::serde)?;
+        let wrapper: Wrapper<Self> = serde_json::from_reader(reader).map_err(Error::Serde)?;
         wrapper.into_result()
     }
 }
@@ -55,7 +55,7 @@ where
 
     /// Convert this wrapper into the underlying error, if any
     pub fn into_error(self) -> Option<Error> {
-        self.error.map(Error::response)
+        self.error.map(Error::Response)
     }
 
     /// Convert this wrapper into a result type
@@ -64,11 +64,11 @@ where
         self.version().ensure_supported()?;
 
         if let Some(e) = self.error {
-            Err(Error::response(e))
+            Err(Error::Response(e))
         } else if let Some(result) = self.result {
             Ok(result)
         } else {
-            Err(Error::malformed_json())
+            Err(Error::MalformedJson)
         }
     }
 

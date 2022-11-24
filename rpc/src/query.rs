@@ -359,14 +359,14 @@ impl FromStr for Query {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (event_types, conditions) = separate_terms(
-            query_parser::query(s)
-                .map_err(|e| Error::invalid_params(format!("failed to parse query: {}", e)))?,
-        );
+        let (event_types, conditions) =
+            separate_terms(query_parser::query(s).map_err(|e| Error::InvalidParams {
+                message: format!("failed to parse query: {}", e),
+            })?);
         if event_types.len() > 1 {
-            return Err(Error::invalid_params(
-                "tm.event can only be used once in a query".to_owned(),
-            ));
+            return Err(Error::InvalidParams {
+                message: "tm.event can only be used once in a query".to_owned(),
+            });
         }
         Ok(Query {
             event_type: event_types.first().cloned(),
@@ -416,7 +416,9 @@ impl FromStr for EventType {
         match s {
             "NewBlock" => Ok(Self::NewBlock),
             "Tx" => Ok(Self::Tx),
-            invalid => Err(Error::unrecognized_event_type(invalid.to_string())),
+            invalid => Err(Error::UnrecognizedEventType {
+                event_type: invalid.to_string(),
+            }),
         }
     }
 }

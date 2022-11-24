@@ -69,7 +69,7 @@ impl SubscriptionRouter {
         // us to safely stop tracking the subscription.
         let mut disconnected = HashSet::new();
         for (id, event_tx) in subs_for_query.iter_mut() {
-            if let Err(e) = event_tx.send(ev.clone()) {
+            if let Err(e) = event_tx.send(ev) {
                 disconnected.insert(id.clone());
                 debug!(
                     "Automatically disconnecting subscription with ID {} for query \"{}\" due to failure to publish to it: {}",

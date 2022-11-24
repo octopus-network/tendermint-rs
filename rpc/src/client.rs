@@ -286,7 +286,7 @@ pub trait Client {
 
         while self.health().await.is_err() {
             if attempts_remaining == 0 {
-                return Err(Error::timeout(timeout));
+                return Err(Error::Timeout { duration: timeout });
             }
 
             attempts_remaining -= 1;

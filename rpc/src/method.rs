@@ -143,7 +143,11 @@ impl FromStr for Method {
             "tx_search" => Method::TxSearch,
             "unsubscribe" => Method::Unsubscribe,
             "validators" => Method::Validators,
-            other => return Err(Error::method_not_found(other.to_string())),
+            other => {
+                return Err(Error::MethodNotFound {
+                    method: other.to_string(),
+                })
+            },
         })
     }
 }

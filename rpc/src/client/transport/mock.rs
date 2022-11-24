@@ -66,7 +66,7 @@ impl<M: MockRequestMatcher> Client for MockClient<M> {
     {
         self.matcher
             .response_for(request)
-            .ok_or_else(Error::mismatch_response)?
+            .ok_or(Error::MismatchResponse)?
     }
 }
 

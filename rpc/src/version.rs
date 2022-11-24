@@ -34,10 +34,10 @@ impl Version {
         if self.is_supported() {
             Ok(())
         } else {
-            Err(Error::unsupported_rpc_version(
-                self.0.to_string(),
-                SUPPORTED_VERSION.to_string(),
-            ))
+            Err(Error::UnsupportedRpcVersion {
+                version: self.0.to_string(),
+                supported: SUPPORTED_VERSION.to_string(),
+            })
         }
     }
 }

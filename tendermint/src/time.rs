@@ -47,7 +47,7 @@ impl TryFrom<Timestamp> for Time {
         let nanos = value
             .nanos
             .try_into()
-            .map_err(|_| Error::timestamp_nanos_out_of_range())?;
+            .map_err(|_| Error::TimestampNanosOutOfRange)?;
         Self::from_unix_timestamp(value.seconds, nanos)
     }
 }
@@ -76,7 +76,7 @@ impl Time {
         debug_assert_eq!(t.offset(), offset!(UTC));
         match t.year() {
             1..=9999 => Ok(Self(PrimitiveDateTime::new(t.date(), t.time()))),
-            _ => Err(Error::date_out_of_range()),
+            _ => Err(Error::DateOutOfRange),
         }
     }
 
@@ -87,12 +87,12 @@ impl Time {
 
     pub fn from_unix_timestamp(secs: i64, nanos: u32) -> Result<Self, Error> {
         if nanos > 999_999_999 {
-            return Err(Error::timestamp_nanos_out_of_range());
+            return Err(Error::TimestampNanosOutOfRange);
         }
         let total_nanos = secs as i128 * 1_000_000_000 + nanos as i128;
         match OffsetDateTime::from_unix_timestamp_nanos(total_nanos) {
             Ok(odt) => Self::from_utc(odt),
-            _ => Err(Error::timestamp_conversion()),
+            _ => Err(Error::TimestampConversion),
         }
     }
 
@@ -100,15 +100,13 @@ impl Time {
     /// as a [`core::time::Duration`]
     pub fn duration_since(&self, other: Time) -> Result<Duration, Error> {
         let duration = self.0.assume_utc() - other.0.assume_utc();
-        duration
-            .try_into()
-            .map_err(|_| Error::duration_out_of_range())
+        duration.try_into().map_err(|_| Error::DurationOutOfRange)
     }
 
     /// Parse [`Time`] from an RFC 3339 date
     pub fn parse_from_rfc3339(s: &str) -> Result<Self, Error> {
         let date = OffsetDateTime::parse(s, &Rfc3339)
-            .map_err(Error::time_parse)?
+            .map_err(Error::TimeParse)?
             .to_offset(offset!(UTC));
         Self::from_utc(date)
     }
@@ -165,11 +163,11 @@ impl Add<Duration> for Time {
     type Output = Result<Self, Error>;
 
     fn add(self, rhs: Duration) -> Self::Output {
-        let duration = rhs.try_into().map_err(|_| Error::duration_out_of_range())?;
+        let duration = rhs.try_into().map_err(|_| Error::DurationOutOfRange)?;
         let t = self
             .0
             .checked_add(duration)
-            .ok_or_else(Error::duration_out_of_range)?;
+            .ok_or(Error::DurationOutOfRange)?;
         Self::from_utc(t.assume_utc())
     }
 }
@@ -178,11 +176,11 @@ impl Sub<Duration> for Time {
     type Output = Result<Self, Error>;
 
     fn sub(self, rhs: Duration) -> Self::Output {
-        let duration = rhs.try_into().map_err(|_| Error::duration_out_of_range())?;
+        let duration = rhs.try_into().map_err(|_| Error::DurationOutOfRange)?;
         let t = self
             .0
             .checked_sub(duration)
-            .ok_or_else(Error::duration_out_of_range)?;
+            .ok_or(Error::DurationOutOfRange)?;
         Self::from_utc(t.assume_utc())
     }
 }
@@ -200,7 +198,7 @@ mod tests {
     use time::{Date, Month::*};
 
     use super::*;
-    use crate::error::ErrorDetail;
+    use crate::error::Error;
 
     // We want to make sure that these timestamps specifically get tested.
     fn particular_rfc3339_timestamps() -> impl Strategy<Value = String> {
@@ -295,7 +293,7 @@ mod tests {
                 }
                 _ => {
                     let e = res.unwrap_err();
-                    assert!(matches!(e.detail(), ErrorDetail::DateOutOfRange(_)))
+                    assert!(matches!(e, Error::DateOutOfRange))
                 }
             }
         }
@@ -308,7 +306,7 @@ mod tests {
             let secs = datetime.unix_timestamp();
             let res = Time::from_unix_timestamp(secs, nanos);
             let e = res.unwrap_err();
-            assert!(matches!(e.detail(), ErrorDetail::TimestampNanosOutOfRange(_)))
+            assert!(matches!(e, Error::TimestampNanosOutOfRange))
         }
     }
 

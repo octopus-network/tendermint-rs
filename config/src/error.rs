@@ -1,6 +1,6 @@
 use std::io::Error as IoError;
 
-use flex_error::{define_error, DisplayOnly};
+use flex_error::{define_error, DisplayOnly, TraceError};
 use tendermint::Error as TendermintError;
 
 define_error! {
@@ -32,7 +32,7 @@ define_error! {
             |_| { format_args!("error parsing url error") },
 
         Tendermint
-            [ TendermintError ]
+            [ TraceError<TendermintError> ]
             |_| { format_args!("tendermint error") },
     }
 }

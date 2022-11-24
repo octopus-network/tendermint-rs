@@ -54,7 +54,7 @@ impl TryFrom<pb::ResponseOfferSnapshot> for OfferSnapshot {
             3 => OfferSnapshot::Reject,
             4 => OfferSnapshot::RejectFormat,
             5 => OfferSnapshot::RejectSender,
-            _ => return Err(crate::Error::unsupported_offer_snapshot_chunk_result()),
+            _ => return Err(crate::Error::UnsupportedOfferSnapshotChunkResult),
         })
     }
 }

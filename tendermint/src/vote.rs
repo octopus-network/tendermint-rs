@@ -62,7 +62,7 @@ impl TryFrom<RawVote> for Vote {
 
     fn try_from(value: RawVote) -> Result<Self, Self::Error> {
         if value.timestamp.is_none() {
-            return Err(Error::missing_timestamp());
+            return Err(Error::MissingTimestamp);
         }
         Ok(Vote {
             vote_type: value.r#type.try_into()?,
@@ -242,7 +242,7 @@ impl TryFrom<i32> for Type {
         match value {
             1 => Ok(Type::Prevote),
             2 => Ok(Type::Precommit),
-            _ => Err(Error::invalid_message_type()),
+            _ => Err(Error::InvalidMessageType),
         }
     }
 }
@@ -270,7 +270,7 @@ impl FromStr for Type {
         match s {
             "Prevote" => Ok(Self::Prevote),
             "Precommit" => Ok(Self::Precommit),
-            _ => Err(Error::invalid_message_type()),
+            _ => Err(Error::InvalidMessageType),
         }
     }
 }

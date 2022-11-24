@@ -67,7 +67,7 @@ impl Hash {
                     h.copy_from_slice(bytes);
                     Ok(Hash::Sha256(h))
                 } else {
-                    Err(Error::invalid_hash_size())
+                    Err(Error::InvalidHashSize)
                 }
             },
         }
@@ -83,7 +83,7 @@ impl Hash {
                 let mut h = [0u8; SHA256_HASH_SIZE];
                 Hex::upper_case()
                     .decode_to_slice(s.as_bytes(), &mut h)
-                    .map_err(Error::subtle_encoding)?;
+                    .map_err(Error::SubtleEncoding)?;
                 Ok(Hash::Sha256(h))
             },
         }
@@ -215,12 +215,12 @@ impl AppHash {
     /// Decode a `Hash` from upper-case hexadecimal
     pub fn from_hex_upper(s: &str) -> Result<Self, Error> {
         if s.len() % 2 != 0 {
-            return Err(Error::invalid_app_hash_length());
+            return Err(Error::InvalidAppHashLength);
         }
         let mut h = vec![0; s.len() / 2];
         Hex::upper_case()
             .decode_to_slice(s.as_bytes(), &mut h)
-            .map_err(Error::subtle_encoding)?;
+            .map_err(Error::SubtleEncoding)?;
         Ok(AppHash(h))
     }
 }

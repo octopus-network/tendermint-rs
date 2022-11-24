@@ -23,7 +23,7 @@ impl TryFrom<i64> for Power {
     type Error = Error;
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
-        Ok(Power(value.try_into().map_err(Error::negative_power)?))
+        Ok(Power(value.try_into().map_err(Error::NegativePower)?))
     }
 }
 
@@ -37,7 +37,7 @@ impl TryFrom<u64> for Power {
     type Error = Error;
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
-        let _val: i64 = value.try_into().map_err(Error::integer_overflow)?;
+        let _val: i64 = value.try_into().map_err(Error::IntegerOverflow)?;
 
         Ok(Power(value))
     }

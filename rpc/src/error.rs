@@ -37,7 +37,7 @@ type TungsteniteError = flex_error::DisplayOnly<async_tungstenite::tungstenite::
 type TungsteniteError = flex_error::NoSource;
 
 define_error! {
-    #[derive(Debug, Clone, PartialEq, Eq)]
+    #[derive(Debug, Clone)]
     Error {
         Response
             [ DisplayError<ResponseError> ]
@@ -133,7 +133,7 @@ define_error! {
             | _ | { "invalid URI" },
 
         Tendermint
-            [ tendermint::Error ]
+            [ DisplayError<tendermint::Error> ]
             | _ | { "tendermint error" },
 
         ParseInt

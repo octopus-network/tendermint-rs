@@ -34,20 +34,27 @@ impl FromStr for Timeout {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Timeouts are either 'ms' or 's', and should always end with 's'
         if s.len() < 2 || !s.ends_with('s') {
-            return Err(Error::parse("invalid units".to_string()));
+            return Err(Error::Parse {
+                data: "invalid units".to_string(),
+            });
         }
 
         let units = match s.chars().nth(s.len() - 2) {
             Some('m') => "ms",
             Some('0'..='9') => "s",
-            _ => return Err(Error::parse("invalid units".to_string())),
+            _ => {
+                return Err(Error::Parse {
+                    data: "invalid units".to_string(),
+                })
+            },
         };
 
         let numeric_part = s.chars().take(s.len() - units.len()).collect::<String>();
 
-        let numeric_value = numeric_part
-            .parse::<u64>()
-            .map_err(|e| Error::parse_int(numeric_part, e))?;
+        let numeric_value = numeric_part.parse::<u64>().map_err(|e| Error::ParseInt {
+            data: numeric_part,
+            e,
+        })?;
 
         let duration = match units {
             "s" => Duration::from_secs(numeric_value),
@@ -100,8 +107,8 @@ mod tests {
 
     #[test]
     fn reject_no_units() {
-        match "123".parse::<Timeout>().unwrap_err().detail() {
-            error::ErrorDetail::Parse(_) => {},
+        match "123".parse::<Timeout>().unwrap_err() {
+            error::Error::Parse { .. } => {},
             _ => panic!("expected parse error to be returned"),
         }
     }

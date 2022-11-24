@@ -30,10 +30,12 @@ impl TryFrom<String> for Id {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() || value.len() > MAX_LENGTH {
-            return Err(Error::length());
+            return Err(Error::Length);
         }
 
-        validate(&value).map_err(|_| Error::parse("chain id charset".to_string()))?;
+        validate(&value).map_err(|_| Error::Parse {
+            data: "chain id charset".to_string(),
+        })?;
         Ok(Id(Cow::Owned(value)))
     }
 }
@@ -167,7 +169,7 @@ const fn validate(s: &str) -> Result<(), ()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::ErrorDetail;
+    use crate::error::Error;
 
     const EXAMPLE_CHAIN_ID: &str = "gaia-9000";
     const MAX_LENGTH_CHAIN_ID: &str = "01234567890123456789012345678901234567890123456789";
@@ -189,10 +191,7 @@ mod tests {
     #[test]
     fn from_str_rejects_empty_chain_ids() {
         assert!(
-            matches!(
-                "".parse::<Id>().unwrap_err().detail(),
-                ErrorDetail::Length(_)
-            ),
+            matches!("".parse::<Id>().unwrap_err(), Error::Length),
             "expected length error"
         );
     }
@@ -201,8 +200,8 @@ mod tests {
     fn from_str_rejects_overlength_chain_ids() {
         assert!(
             matches!(
-                OVERLENGTH_CHAIN_ID.parse::<Id>().unwrap_err().detail(),
-                ErrorDetail::Length(_)
+                OVERLENGTH_CHAIN_ID.parse::<Id>().unwrap_err(),
+                Error::Length
             ),
             "expected length error"
         );

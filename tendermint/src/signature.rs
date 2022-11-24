@@ -54,18 +54,20 @@ impl Signature {
             return Ok(None);
         }
         if bytes.len() != SIGNATURE_LENGTH {
-            return Err(Error::signature_invalid(format!(
-                "expected signature to be {} bytes long, but was {} bytes",
-                SIGNATURE_LENGTH,
-                bytes.len()
-            )));
+            return Err(Error::SignatureInvalid {
+                detail: format!(
+                    "expected signature to be {} bytes long, but was {} bytes",
+                    SIGNATURE_LENGTH,
+                    bytes.len()
+                ),
+            });
         }
 
         Ok(Some(Self(bytes.to_vec())))
     }
 
     fn new_non_empty<B: AsRef<[u8]>>(bytes: B) -> Result<Self, Error> {
-        Self::new(bytes)?.ok_or_else(Error::empty_signature)
+        Self::new(bytes)?.ok_or(Error::EmptySignature)
     }
 
     /// Return a reference to the underlying byte array

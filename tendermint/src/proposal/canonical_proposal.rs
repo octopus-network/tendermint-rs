@@ -39,13 +39,13 @@ impl TryFrom<RawCanonicalProposal> for CanonicalProposal {
 
     fn try_from(value: RawCanonicalProposal) -> Result<Self, Self::Error> {
         if value.pol_round < -1 {
-            return Err(Error::negative_pol_round());
+            return Err(Error::NegativePolRound);
         }
-        let round = Round::try_from(i32::try_from(value.round).map_err(Error::integer_overflow)?)?;
+        let round = Round::try_from(i32::try_from(value.round).map_err(Error::IntegerOverflow)?)?;
         let pol_round = match value.pol_round {
             -1 => None,
             n => Some(Round::try_from(
-                i32::try_from(n).map_err(Error::integer_overflow)?,
+                i32::try_from(n).map_err(Error::IntegerOverflow)?,
             )?),
         };
         // If the Hash is empty in BlockId, the BlockId should be empty.

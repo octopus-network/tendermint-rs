@@ -125,19 +125,23 @@ impl TryFrom<RawPublicKey> for PublicKey {
     type Error = Error;
 
     fn try_from(value: RawPublicKey) -> Result<Self, Self::Error> {
-        let sum = &value
-            .sum
-            .ok_or_else(|| Error::invalid_key("empty sum".to_string()))?;
+        let sum = &value.sum.ok_or(Error::InvalidKey {
+            detail: "empty sum".to_string(),
+        })?;
         if let Sum::Ed25519(b) = sum {
-            return Self::from_raw_ed25519(b)
-                .ok_or_else(|| Error::invalid_key("malformed ed25519 key".to_string()));
+            return Self::from_raw_ed25519(b).ok_or(Error::InvalidKey {
+                detail: "malformed ed25519 key".to_string(),
+            });
         }
         #[cfg(feature = "secp256k1")]
         if let Sum::Secp256k1(b) = sum {
-            return Self::from_raw_secp256k1(b)
-                .ok_or_else(|| Error::invalid_key("malformed key".to_string()));
+            return Self::from_raw_secp256k1(b).ok_or(Error::InvalidKey {
+                detail: "malformed key".to_string(),
+            });
         }
-        Err(Error::invalid_key("not an ed25519 key".to_string()))
+        Err(Error::InvalidKey {
+            detail: "not an ed25519 key".to_string(),
+        })
     }
 }
 
@@ -198,14 +202,12 @@ impl PublicKey {
         match self {
             PublicKey::Ed25519(pk) => {
                 match ed25519_consensus::Signature::try_from(signature.as_bytes()) {
-                    Ok(sig) => pk.verify(&sig, msg).map_err(|_| {
-                        Error::signature_invalid(
-                            "Ed25519 signature verification failed".to_string(),
-                        )
+                    Ok(sig) => pk.verify(&sig, msg).map_err(|_| Error::SignatureInvalid {
+                        detail: "Ed25519 signature verification failed".to_string(),
                     }),
-                    Err(_) => Err(Error::signature_invalid(
-                        "Could not parse Ed25519 signature".to_string(),
-                    )),
+                    Err(_) => Err(Error::SignatureInvalid {
+                        detail: "Could not parse Ed25519 signature".to_string(),
+                    }),
                 }
             },
             #[cfg(feature = "secp256k1")]
@@ -320,9 +322,9 @@ impl TendermintKey {
         #[allow(unreachable_patterns)]
         match public_key {
             PublicKey::Ed25519(_) => Ok(TendermintKey::AccountKey(public_key)),
-            _ => Err(Error::invalid_key(
-                "only ed25519 consensus keys are supported".to_string(),
-            )),
+            _ => Err(Error::InvalidKey {
+                detail: "only ed25519 consensus keys are supported".to_string(),
+            }),
         }
     }
 
@@ -377,7 +379,9 @@ impl FromStr for Algorithm {
         match s {
             "ed25519" => Ok(Algorithm::Ed25519),
             "secp256k1" => Ok(Algorithm::Secp256k1),
-            _ => Err(Error::parse(format!("invalid algorithm: {}", s))),
+            _ => Err(Error::Parse {
+                data: format!("invalid algorithm: {}", s),
+            }),
         }
     }
 }

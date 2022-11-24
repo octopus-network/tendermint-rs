@@ -46,7 +46,7 @@ impl TryFrom<RawEvidence> for Evidence {
     type Error = Error;
 
     fn try_from(value: RawEvidence) -> Result<Self, Self::Error> {
-        match value.sum.ok_or_else(Error::invalid_evidence)? {
+        match value.sum.ok_or(Error::InvalidEvidence)? {
             Sum::DuplicateVoteEvidence(ev) => Ok(Evidence::DuplicateVote(Box::new(ev.try_into()?))),
             Sum::LightClientAttackEvidence(_ev) => Ok(Evidence::LightClientAttackEvidence),
         }
@@ -80,20 +80,11 @@ impl TryFrom<RawDuplicateVoteEvidence> for DuplicateVoteEvidence {
 
     fn try_from(value: RawDuplicateVoteEvidence) -> Result<Self, Self::Error> {
         Ok(Self {
-            vote_a: value
-                .vote_a
-                .ok_or_else(Error::missing_evidence)?
-                .try_into()?,
-            vote_b: value
-                .vote_b
-                .ok_or_else(Error::missing_evidence)?
-                .try_into()?,
+            vote_a: value.vote_a.ok_or(Error::MissingEvidence)?.try_into()?,
+            vote_b: value.vote_b.ok_or(Error::MissingEvidence)?.try_into()?,
             total_voting_power: value.total_voting_power.try_into()?,
             validator_power: value.validator_power.try_into()?,
-            timestamp: value
-                .timestamp
-                .ok_or_else(Error::missing_timestamp)?
-                .try_into()?,
+            timestamp: value.timestamp.ok_or(Error::MissingTimestamp)?.try_into()?,
         })
     }
 }
@@ -114,7 +105,7 @@ impl DuplicateVoteEvidence {
     /// constructor
     pub fn new(vote_a: Vote, vote_b: Vote) -> Result<Self, Error> {
         if vote_a.height != vote_b.height {
-            return Err(Error::invalid_evidence());
+            return Err(Error::InvalidEvidence);
         }
         // Todo: make more assumptions about what is considered a valid evidence for duplicate vote
         Ok(Self {
@@ -248,10 +239,10 @@ impl TryFrom<RawEvidenceParams> for Params {
             max_age_num_blocks: value
                 .max_age_num_blocks
                 .try_into()
-                .map_err(Error::negative_max_age_num)?,
+                .map_err(Error::NegativeMaxAgeNum)?,
             max_age_duration: value
                 .max_age_duration
-                .ok_or_else(Error::missing_max_age_duration)?
+                .ok_or(Error::MissingMaxAgeDuration)?
                 .try_into()?,
             max_bytes: value.max_bytes,
         })
@@ -290,8 +281,8 @@ impl TryFrom<RawDuration> for Duration {
 
     fn try_from(value: RawDuration) -> Result<Self, Self::Error> {
         Ok(Self(core::time::Duration::new(
-            value.seconds.try_into().map_err(Error::integer_overflow)?,
-            value.nanos.try_into().map_err(Error::integer_overflow)?,
+            value.seconds.try_into().map_err(Error::IntegerOverflow)?,
+            value.nanos.try_into().map_err(Error::IntegerOverflow)?,
         )))
     }
 }

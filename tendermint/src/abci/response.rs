@@ -126,7 +126,7 @@ impl TryFrom<Response> for ConsensusResponse {
             Response::DeliverTx(x) => Ok(Self::DeliverTx(x)),
             Response::EndBlock(x) => Ok(Self::EndBlock(x)),
             Response::Commit(x) => Ok(Self::Commit(x)),
-            _ => Err(Error::invalid_abci_response_type()),
+            _ => Err(Error::InvalidAbciResponseType),
         }
     }
 }
@@ -151,7 +151,7 @@ impl TryFrom<Response> for MempoolResponse {
     fn try_from(req: Response) -> Result<Self, Self::Error> {
         match req {
             Response::CheckTx(x) => Ok(Self::CheckTx(x)),
-            _ => Err(Error::invalid_abci_response_type()),
+            _ => Err(Error::InvalidAbciResponseType),
         }
     }
 }
@@ -184,7 +184,7 @@ impl TryFrom<Response> for InfoResponse {
             Response::Echo(x) => Ok(Self::Echo(x)),
             Response::Info(x) => Ok(Self::Info(x)),
             Response::Query(x) => Ok(Self::Query(x)),
-            _ => Err(Error::invalid_abci_response_type()),
+            _ => Err(Error::InvalidAbciResponseType),
         }
     }
 }
@@ -221,7 +221,7 @@ impl TryFrom<Response> for SnapshotResponse {
             Response::OfferSnapshot(x) => Ok(Self::OfferSnapshot(x)),
             Response::LoadSnapshotChunk(x) => Ok(Self::LoadSnapshotChunk(x)),
             Response::ApplySnapshotChunk(x) => Ok(Self::ApplySnapshotChunk(x)),
-            _ => Err(Error::invalid_abci_response_type()),
+            _ => Err(Error::InvalidAbciResponseType),
         }
     }
 }
@@ -277,7 +277,7 @@ impl TryFrom<pb::Response> for Response {
             Some(Value::OfferSnapshot(x)) => Ok(Response::OfferSnapshot(x.try_into()?)),
             Some(Value::LoadSnapshotChunk(x)) => Ok(Response::LoadSnapshotChunk(x.try_into()?)),
             Some(Value::ApplySnapshotChunk(x)) => Ok(Response::ApplySnapshotChunk(x.try_into()?)),
-            None => Err(crate::Error::missing_data()),
+            None => Err(crate::Error::MissingData),
         }
     }
 }

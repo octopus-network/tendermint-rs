@@ -15,7 +15,7 @@ impl TryFrom<i32> for ValidatorIndex {
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         Ok(ValidatorIndex(
-            value.try_into().map_err(Error::negative_validator_index)?,
+            value.try_into().map_err(Error::NegativeValidatorIndex)?,
         ))
     }
 }
@@ -30,7 +30,7 @@ impl TryFrom<u32> for ValidatorIndex {
     type Error = Error;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        let _val: i32 = value.try_into().map_err(Error::integer_overflow)?;
+        let _val: i32 = value.try_into().map_err(Error::IntegerOverflow)?;
         Ok(ValidatorIndex(value))
     }
 }
@@ -46,7 +46,7 @@ impl TryFrom<usize> for ValidatorIndex {
 
     fn try_from(value: usize) -> Result<Self, Self::Error> {
         Ok(ValidatorIndex(
-            value.try_into().map_err(Error::integer_overflow)?,
+            value.try_into().map_err(Error::IntegerOverflow)?,
         ))
     }
 }
@@ -83,9 +83,9 @@ impl FromStr for ValidatorIndex {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Error> {
-        ValidatorIndex::try_from(
-            s.parse::<u32>()
-                .map_err(|e| Error::parse_int("validator index decode".to_string(), e))?,
-        )
+        ValidatorIndex::try_from(s.parse::<u32>().map_err(|e| Error::ParseInt {
+            data: "validator index decode".to_string(),
+            e,
+        })?)
     }
 }

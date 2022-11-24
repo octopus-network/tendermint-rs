@@ -39,15 +39,14 @@ impl TryFrom<RawParams> for Params {
         Ok(Self {
             block: value
                 .block
-                .ok_or_else(|| Error::invalid_block("missing block".to_string()))?
+                .ok_or(Error::InvalidBlock {
+                    reason: "missing block".to_string(),
+                })?
                 .try_into()?,
-            evidence: value
-                .evidence
-                .ok_or_else(Error::invalid_evidence)?
-                .try_into()?,
+            evidence: value.evidence.ok_or(Error::InvalidEvidence)?.try_into()?,
             validator: value
                 .validator
-                .ok_or_else(Error::invalid_validator_params)?
+                .ok_or(Error::InvalidValidatorParams)?
                 .try_into()?,
             version: value.version.map(TryFrom::try_from).transpose()?,
         })

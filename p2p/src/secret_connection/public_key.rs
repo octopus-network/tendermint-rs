@@ -24,7 +24,7 @@ impl PublicKey {
     pub fn from_raw_ed25519(bytes: &[u8]) -> Result<Self, Error> {
         ed25519_consensus::VerificationKey::try_from(bytes)
             .map(Self::Ed25519)
-            .map_err(|_| Error::signature())
+            .map_err(|_| Error::Signature)
     }
 
     /// Get Ed25519 public key

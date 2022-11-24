@@ -40,7 +40,7 @@ impl TryFrom<pb::RequestOfferSnapshot> for OfferSnapshot {
         Ok(Self {
             snapshot: offer_snapshot
                 .snapshot
-                .ok_or_else(crate::Error::missing_data)?
+                .ok_or(crate::Error::MissingData)?
                 .try_into()?,
             app_hash: offer_snapshot.app_hash,
         })

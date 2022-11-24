@@ -29,7 +29,7 @@ impl TryFrom<RawSignProposalRequest> for SignProposalRequest {
 
     fn try_from(value: RawSignProposalRequest) -> Result<Self, Self::Error> {
         if value.proposal.is_none() {
-            return Err(Error::no_proposal_found());
+            return Err(Error::NoProposalFound);
         }
         Ok(SignProposalRequest {
             proposal: Proposal::try_from(value.proposal.unwrap())?,

@@ -4,7 +4,7 @@
 //! blockchain networks, including chain information types, secret connections,
 //! and remote procedure calls (JSON-RPC).
 
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(
     warnings,
@@ -20,9 +20,6 @@
 )]
 
 extern crate alloc;
-
-#[cfg(test)]
-extern crate std;
 
 #[macro_use]
 pub mod error;

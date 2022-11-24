@@ -32,12 +32,16 @@ impl TryFrom<RawMeta> for Meta {
         Ok(Meta {
             block_id: value
                 .block_id
-                .ok_or_else(|| Error::invalid_block("no block_id".to_string()))?
+                .ok_or(Error::InvalidBlock {
+                    reason: "no block_id".to_string(),
+                })?
                 .try_into()?,
             block_size: value.block_size,
             header: value
                 .header
-                .ok_or_else(|| Error::invalid_block("no header".to_string()))?
+                .ok_or(Error::InvalidBlock {
+                    reason: "no header".to_string(),
+                })?
                 .try_into()?,
             num_txs: value.num_txs,
         })

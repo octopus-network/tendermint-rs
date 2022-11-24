@@ -16,7 +16,7 @@ impl TryFrom<i32> for Round {
     type Error = Error;
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
-        Ok(Round(value.try_into().map_err(Error::negative_round)?))
+        Ok(Round(value.try_into().map_err(Error::NegativeRound)?))
     }
 }
 
@@ -30,7 +30,7 @@ impl TryFrom<u32> for Round {
     type Error = Error;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        let _val: i32 = value.try_into().map_err(Error::integer_overflow)?;
+        let _val: i32 = value.try_into().map_err(Error::IntegerOverflow)?;
 
         Ok(Round(value))
     }
@@ -82,10 +82,10 @@ impl FromStr for Round {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Error> {
-        Round::try_from(
-            s.parse::<u32>()
-                .map_err(|e| Error::parse_int(s.to_string(), e))?,
-        )
+        Round::try_from(s.parse::<u32>().map_err(|e| Error::ParseInt {
+            data: s.to_string(),
+            e,
+        })?)
     }
 }
 

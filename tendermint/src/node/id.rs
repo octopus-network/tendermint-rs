@@ -81,10 +81,12 @@ impl FromStr for Id {
         // Accept either upper or lower case hex
         let bytes = hex::decode_upper(s)
             .or_else(|_| hex::decode(s))
-            .map_err(Error::subtle_encoding)?;
+            .map_err(Error::SubtleEncoding)?;
 
         if bytes.len() != LENGTH {
-            return Err(Error::parse("invalid length".to_string()));
+            return Err(Error::Parse {
+                data: "invalid length".to_string(),
+            });
         }
 
         let mut result_bytes = [0u8; LENGTH];

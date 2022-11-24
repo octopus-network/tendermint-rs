@@ -32,7 +32,7 @@ impl TryFrom<Vec<u8>> for Id {
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
         if value.len() != LENGTH {
-            return Err(Error::invalid_account_id_length());
+            return Err(Error::InvalidAccountIdLength);
         }
         let mut slice: [u8; LENGTH] = [0; LENGTH];
         slice.copy_from_slice(&value[..]);
@@ -114,7 +114,7 @@ impl FromStr for Id {
         // Accept either upper or lower case hex
         let bytes = hex::decode_upper(s)
             .or_else(|_| hex::decode(s))
-            .map_err(Error::subtle_encoding)?;
+            .map_err(Error::SubtleEncoding)?;
 
         bytes.try_into()
     }

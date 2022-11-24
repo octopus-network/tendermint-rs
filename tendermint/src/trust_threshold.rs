@@ -55,13 +55,13 @@ impl TrustThresholdFraction {
     /// In any other case we return an error.
     pub fn new(numerator: u64, denominator: u64) -> Result<Self, Error> {
         if numerator >= denominator {
-            return Err(Error::trust_threshold_too_large());
+            return Err(Error::TrustThresholdTooLarge);
         }
         if denominator == 0 {
-            return Err(Error::undefined_trust_threshold());
+            return Err(Error::UndefinedTrustThreshold);
         }
         if 3 * numerator < denominator {
-            return Err(Error::trust_threshold_too_small());
+            return Err(Error::TrustThresholdTooSmall);
         }
         Ok(Self {
             numerator,

@@ -3,227 +3,165 @@
 use alloc::string::String;
 use core::num::TryFromIntError;
 
-use flex_error::{define_error, DisplayOnly};
-use serde::{Deserialize, Serialize};
+use displaydoc::Display;
 
 use crate::{account, vote};
 
-define_error! {
-    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-    Error {
-        Crypto
-            |_| { format_args!("cryptographic error") },
-
-        InvalidKey
-            { detail: String }
-            |e| { format_args!("invalid key: {}", e) },
-
-        Length
-            |_| { format_args!("length error") },
-
-        Parse
-            { data: String }
-            | e | { format_args!("error parsing data: {}", e.data) },
-
-        ParseInt
-            { data: String }
-            [ DisplayOnly<core::num::ParseIntError>]
-            | e | { format_args!("error parsing int data: {}", e.data) },
-
-        Protocol
-            { detail: String }
-            |e| { format_args!("protocol error: {}", e.detail) },
-
-        DateOutOfRange
-            |_| { format_args!("date out of range") },
-
-        DurationOutOfRange
-            |_| { format_args!("duration value out of range") },
-
-        EmptySignature
-            |_| { format_args!("empty signature") },
-
-        SignatureInvalid
-            { detail: String }
-            |e| { format_args!("bad signature: {}", e.detail) },
-
-        InvalidMessageType
-            |_| { format_args!("invalid message type") },
-
-        NegativeHeight
-            [ DisplayOnly<TryFromIntError> ]
-            |_| { format_args!("negative height") },
-
-        NegativeRound
-            [ DisplayOnly<TryFromIntError> ]
-            |_| { format_args!("negative round") },
-
-        NegativePolRound
-            |_| { format_args!("negative POL round") },
-
-        NegativeValidatorIndex
-            [ DisplayOnly<TryFromIntError> ]
-            |_| { format_args!("negative validator index") },
-
-        InvalidHashSize
-            |_| { format_args!("invalid hash: expected hash size to be 32 bytes") },
-
-        NonZeroTimestamp
-            | _ | { "absent commitsig has non-zero timestamp" },
-
-        InvalidAccountIdLength
-            |_| { format_args!("invalid account ID length") },
-
-        InvalidSignatureIdLength
-            |_| { format_args!("invalid signature ID length") },
-
-        IntegerOverflow
-            [ DisplayOnly<TryFromIntError> ]
-            |_| { format_args!("integer overflow") },
-
-        TimestampNanosOutOfRange
-            |_| { format_args!("timestamp nanosecond component is out of range") },
-
-        TimestampConversion
-            |_| { format_args!("timestamp conversion error") },
-
-        NoVoteFound
-            |_| { format_args!("no vote found") },
-
-        NoProposalFound
-            |_| { format_args!("no proposal found") },
-
-        InvalidAppHashLength
-            |_| { format_args!("invalid app hash length") },
-
-        InvalidPartSetHeader
-            { detail : String }
-            |_| { format_args!("invalid part set header") },
-
-        MissingHeader
-            |_| { format_args!("missing header field") },
-
-        MissingData
-            |_| { format_args!("missing data field") },
-
-        MissingEvidence
-            |_| { format_args!("missing evidence field") },
-
-        MissingTimestamp
-            |_| { format_args!("missing timestamp field") },
-
-        MissingVersion
-            |_| { format_args!("missing version") },
-
-        MissingMaxAgeDuration
-            |_| { format_args!("missing max_age_duration") },
-
-        MissingPublicKey
-            |_| { format_args!("missing public key") },
-
-        MissingValidator
-            |_| { format_args!("missing validator") },
-
-        MissingLastCommitInfo
-            |_| { format_args!("missing last commit info") },
-
-        MissingGenesisTime
-            |_| { format_args!("missing genesis time") },
-
-        MissingConsensusParams
-            |_| { format_args!("missing consensus params") },
-
-        InvalidTimestamp
-            { reason: String }
-            | e | { format_args!("invalid timestamp: {}", e.reason) },
-
-        InvalidBlock
-            { reason: String }
-            | e | { format_args!("invalid block: {}", e.reason) },
-
-        InvalidFirstHeader
-            |_| { format_args!("last_block_id is not null on first height") },
-
-        InvalidSignature
-            { reason: String }
-            | e | { format_args!("invalid signature: {}", e.reason) },
-
-        InvalidValidatorAddress
-            |_| { format_args!("invalid validator address") },
-
-        InvalidSignedHeader
-            |_| { format_args!("invalid signed header") },
-
-        InvalidEvidence
-            |_| { format_args!("invalid evidence") },
-
-        InvalidValidatorParams
-            |_| { format_args!("invalid validator parameters") },
-
-        InvalidVersionParams
-            |_| { format_args!("invalid version parameters") },
-
-        InvalidAbciRequestType
-            |_| { format_args!("invalid ABCI request type") },
-
-        InvalidAbciResponseType
-            |_| { format_args!("invalid ABCI response type") },
-
-        BlockIdFlag
-            |_| { format_args!("invalid block id flag") },
-
-        NegativePower
-            [ DisplayOnly<TryFromIntError> ]
-            |_| { format_args!("negative power") },
-
-        UnsupportedKeyType
-            |_| { format_args!("unsupported key type" ) },
-
-        UnsupportedCheckTxType
-            |_| { format_args!("unsupported CheckTx type" ) },
-
-        UnsupportedApplySnapshotChunkResult
-            |_| { format_args!("unsupported ApplySnapshotChunkResult type" ) },
-
-        UnsupportedOfferSnapshotChunkResult
-            |_| { format_args!("unsupported OfferSnapshotChunkResult type" ) },
-
-        RawVotingPowerMismatch
-            { raw: vote::Power, computed: vote::Power }
-            |e| { format_args!("mismatch between raw voting ({0:?}) and computed one ({1:?})", e.raw, e.computed) },
-
-        NegativeMaxAgeNum
-            [ DisplayOnly<TryFromIntError> ]
-            |_| { format_args!("negative max_age_num_blocks") },
-
-        ProposerNotFound
-            { account: account::Id }
-            |e| { format_args!("proposer with address '{0}' no found in validator set", e.account) },
-
-        TimeParse
-            [ DisplayOnly<time::error::Parse> ]
-            |_| { format_args!("time parsing error") },
-
-        SubtleEncoding
-            [ DisplayOnly<subtle_encoding::Error> ]
-            |_| { format_args!("subtle encoding error") },
-
-        Signature
-            |_| { "signature error" },
-
-        TrustThresholdTooLarge
-            |_| { "trust threshold is too large (must be <= 1)" },
-
-        UndefinedTrustThreshold
-            |_| { "undefined trust threshold (denominator cannot be 0)" },
-
-        TrustThresholdTooSmall
-            |_| { "trust threshold too small (must be >= 1/3)" },
-    }
+#[derive(Debug, Display, Clone)]
+pub enum Error {
+    /// cryptographic error
+    Crypto,
+    /// invalid key: `{detail}`
+    InvalidKey { detail: String },
+    /// length error
+    Length,
+    /// error parsing data: `{data}`
+    Parse { data: String },
+    /// error parsing int data: `{data}`
+    ParseInt {
+        data: String,
+        e: core::num::ParseIntError,
+    },
+    /// protocol error: `{detail}`
+    Protocol { detail: String },
+    /// date out of range
+    DateOutOfRange,
+    /// duration value out of range
+    DurationOutOfRange,
+    /// empty signature
+    EmptySignature,
+    /// bad signature: `{detail}`
+    SignatureInvalid { detail: String },
+    /// invalid message type
+    InvalidMessageType,
+    /// negative height
+    NegativeHeight(TryFromIntError),
+    /// negative round
+    NegativeRound(TryFromIntError),
+    /// negative POL round
+    NegativePolRound,
+    /// negative validator index
+    NegativeValidatorIndex(TryFromIntError),
+    /// invalid hash: expected hash size to be 32 bytes
+    InvalidHashSize,
+    /// absent commitsig has non-zero timestamp
+    NonZeroTimestamp,
+    /// invalid account ID length
+    InvalidAccountIdLength,
+    /// invalid signature ID length
+    InvalidSignatureIdLength,
+    /// integer overflow
+    IntegerOverflow(TryFromIntError),
+    /// timestamp nanosecond component is out of range
+    TimestampNanosOutOfRange,
+    /// timestamp conversion error
+    TimestampConversion,
+    /// no vote found
+    NoVoteFound,
+    /// no proposal found
+    NoProposalFound,
+    /// invalid app hash length
+    InvalidAppHashLength,
+    /// invalid part set header
+    InvalidPartSetHeader { detail: String },
+    /// missing header field
+    MissingHeader,
+    /// missing data field
+    MissingData,
+    /// missing evidence field
+    MissingEvidence,
+    /// missing timestamp field
+    MissingTimestamp,
+    /// missing version
+    MissingVersion,
+    /// missing max_age_duration
+    MissingMaxAgeDuration,
+    /// missing public key
+    MissingPublicKey,
+    /// missing validator
+    MissingValidator,
+    /// missing last commit info
+    MissingLastCommitInfo,
+    /// missing genesis time
+    MissingGenesisTime,
+    /// missing consensus params
+    MissingConsensusParams,
+    /// invalid timestamp: `{reason}`
+    InvalidTimestamp { reason: String },
+    /// invalid block: `{reason}`
+    InvalidBlock { reason: String },
+    /// last_block_id is not null on first height
+    InvalidFirstHeader,
+    /// invalid signature: `{reason}`
+    InvalidSignature { reason: String },
+    /// invalid validator address
+    InvalidValidatorAddress,
+    /// invalid signed header
+    InvalidSignedHeader,
+    /// invalid evidence
+    InvalidEvidence,
+    /// invalid validator parameters
+    InvalidValidatorParams,
+    /// invalid version parameters
+    InvalidVersionParams,
+    /// invalid ABCI request type
+    InvalidAbciRequestType,
+    /// invalid ABCI response type
+    InvalidAbciResponseType,
+    /// invalid block id flag
+    BlockIdFlag,
+    /// negative power
+    NegativePower(TryFromIntError),
+    /// unsupported key type
+    UnsupportedKeyType,
+    /// unsupported CheckTx type
+    UnsupportedCheckTxType,
+    /// unsupported ApplySnapshotChunkResult type
+    UnsupportedApplySnapshotChunkResult,
+    /// unsupported OfferSnapshotChunkResult type
+    UnsupportedOfferSnapshotChunkResult,
+    /// mismatch between raw voting (`{raw:?}`) and computed one (`{computed:?}`)
+    RawVotingPowerMismatch {
+        raw: vote::Power,
+        computed: vote::Power,
+    },
+    /// negative max_age_num_blocks
+    NegativeMaxAgeNum(TryFromIntError),
+    /// proposer with address `{account}` no found in validator set
+    ProposerNotFound { account: account::Id },
+    /// time parsing error
+    TimeParse(time::error::Parse),
+    /// subtle encoding error
+    SubtleEncoding(subtle_encoding::Error),
+    /// signature error
+    Signature,
+    /// trust threshold is too large (must be <= 1)
+    TrustThresholdTooLarge,
+    /// undefined trust threshold (denominator cannot be 0)
+    UndefinedTrustThreshold,
+    /// trust threshold too small (must be >= 1/3)
+    TrustThresholdTooSmall,
 }
 
 impl From<core::convert::Infallible> for Error {
     fn from(_never: core::convert::Infallible) -> Error {
         unreachable!("Infallible can never be constructed")
+    }
+}
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn flex_error::StdError + 'static)> {
+        match &self {
+            Error::ParseInt { e , ..} => Some(e),
+            Error::NegativeHeight(e) => Some(e),
+            Error::NegativeRound(e) => Some(e),
+            Error::NegativeValidatorIndex(e) => Some(e),
+            Error::IntegerOverflow(e) => Some(e),
+            Error::NegativePower(e) => Some(e),
+            Error::NegativeMaxAgeNum(e) => Some(e),
+            Error::TimeParse(e) => Some(e),
+            Error::SubtleEncoding(e) => Some(e),
+            _ => None,
+        }
     }
 }

@@ -50,7 +50,10 @@ impl FromStr for Gas {
     fn from_str(s: &str) -> Result<Self, Error> {
         let res = s
             .parse::<u64>()
-            .map_err(|e| Error::parse_int(s.to_string(), e))?
+            .map_err(|e| Error::ParseInt {
+                data: s.to_string(),
+                e,
+            })?
             .into();
 
         Ok(res)

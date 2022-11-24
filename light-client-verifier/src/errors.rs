@@ -2,7 +2,7 @@
 
 use core::time::Duration;
 
-use flex_error::define_error;
+use flex_error::{define_error, TraceError};
 use serde::{Deserialize, Serialize};
 use tendermint::{account::Id, Error as TendermintError};
 
@@ -16,7 +16,7 @@ define_error! {
     #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
     VerificationError {
         Tendermint
-            [ TendermintError ]
+            [ TraceError<TendermintError> ]
             | _ | { "tendermint error" },
 
         HeaderFromTheFuture

@@ -26,7 +26,7 @@ impl TryFrom<RawSignVoteRequest> for SignVoteRequest {
     type Error = Error;
 
     fn try_from(value: RawSignVoteRequest) -> Result<Self, Self::Error> {
-        let vote = value.vote.ok_or_else(Error::no_vote_found)?.try_into()?;
+        let vote = value.vote.ok_or(Error::NoVoteFound)?.try_into()?;
 
         let chain_id = value.chain_id.try_into()?;
 

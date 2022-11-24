@@ -22,7 +22,7 @@ impl TryFrom<i64> for Height {
     type Error = Error;
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
-        Ok(Height(value.try_into().map_err(Error::negative_height)?))
+        Ok(Height(value.try_into().map_err(Error::NegativeHeight)?))
     }
 }
 
@@ -37,7 +37,7 @@ impl TryFrom<u64> for Height {
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
         // Make sure the u64 value can be converted safely to i64
-        let _ival: i64 = value.try_into().map_err(Error::integer_overflow)?;
+        let _ival: i64 = value.try_into().map_err(Error::IntegerOverflow)?;
 
         Ok(Height(value))
     }
@@ -101,10 +101,10 @@ impl FromStr for Height {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Error> {
-        Height::try_from(
-            s.parse::<u64>()
-                .map_err(|e| Error::parse_int(s.to_string(), e))?,
-        )
+        Height::try_from(s.parse::<u64>().map_err(|e| Error::ParseInt {
+            data: s.to_string(),
+            e,
+        })?)
     }
 }
 

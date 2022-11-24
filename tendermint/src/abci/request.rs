@@ -144,7 +144,7 @@ impl TryFrom<Request> for ConsensusRequest {
             Request::DeliverTx(x) => Ok(Self::DeliverTx(x)),
             Request::EndBlock(x) => Ok(Self::EndBlock(x)),
             Request::Commit => Ok(Self::Commit),
-            _ => Err(Error::invalid_abci_request_type()),
+            _ => Err(Error::InvalidAbciRequestType),
         }
     }
 }
@@ -169,7 +169,7 @@ impl TryFrom<Request> for MempoolRequest {
     fn try_from(req: Request) -> Result<Self, Self::Error> {
         match req {
             Request::CheckTx(x) => Ok(Self::CheckTx(x)),
-            _ => Err(Error::invalid_abci_request_type()),
+            _ => Err(Error::InvalidAbciRequestType),
         }
     }
 }
@@ -202,7 +202,7 @@ impl TryFrom<Request> for InfoRequest {
             Request::Info(x) => Ok(Self::Info(x)),
             Request::Query(x) => Ok(Self::Query(x)),
             Request::Echo(x) => Ok(Self::Echo(x)),
-            _ => Err(Error::invalid_abci_request_type()),
+            _ => Err(Error::InvalidAbciRequestType),
         }
     }
 }
@@ -239,7 +239,7 @@ impl TryFrom<Request> for SnapshotRequest {
             Request::OfferSnapshot(x) => Ok(Self::OfferSnapshot(x)),
             Request::LoadSnapshotChunk(x) => Ok(Self::LoadSnapshotChunk(x)),
             Request::ApplySnapshotChunk(x) => Ok(Self::ApplySnapshotChunk(x)),
-            _ => Err(Error::invalid_abci_request_type()),
+            _ => Err(Error::InvalidAbciRequestType),
         }
     }
 }
@@ -293,7 +293,7 @@ impl TryFrom<pb::Request> for Request {
             Some(Value::OfferSnapshot(x)) => Ok(Request::OfferSnapshot(x.try_into()?)),
             Some(Value::LoadSnapshotChunk(x)) => Ok(Request::LoadSnapshotChunk(x.try_into()?)),
             Some(Value::ApplySnapshotChunk(x)) => Ok(Request::ApplySnapshotChunk(x.try_into()?)),
-            None => Err(crate::Error::missing_data()),
+            None => Err(crate::Error::MissingData),
         }
     }
 }

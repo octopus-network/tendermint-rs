@@ -53,10 +53,35 @@ zeroize = { version = "1.1", default-features = false, features = ["zeroize_deri
 flex-error = { version = "0.4.4", default-features = false }
 k256 = { version = "0.11", optional = true, default-features = false, features = ["ecdsa", "sha256"] }
 ripemd = { version = "0.1", default-features = false, optional = true }
+displaydoc = { version = "0.2.3", default-features = false }
 
 [features]
 default = ["std"]
-std = ["flex-error/std", "flex-error/eyre_tracer", "clock"]
+std = [
+    "bytes/std",
+    "ed25519/std",
+    "ed25519-consensus/std",
+    "futures/std",
+    "num-traits/std",
+    "once_cell/std",
+    "prost/std",
+    "prost-types/std",
+    "serde/std",
+    "serde_json/std",
+    "serde_bytes/std",
+    "sha2/std",
+    "signature/std",
+    "subtle/std",
+    "subtle-encoding/std",
+    "time/std",
+    "zeroize/std",
+    "k256/std",
+    "ripemd/std",
+    "flex-error/std", 
+    "flex-error/eyre_tracer", 
+    "clock", 
+    "displaydoc/std"
+]
 clock = ["time/std"]
 secp256k1 = ["k256", "ripemd"]
 

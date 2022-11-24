@@ -56,7 +56,7 @@ impl TryFrom<RawBlock> for Block {
     type Error = Error;
 
     fn try_from(value: RawBlock) -> Result<Self, Self::Error> {
-        let header: Header = value.header.ok_or_else(Error::missing_header)?.try_into()?;
+        let header: Header = value.header.ok_or(Error::MissingHeader)?.try_into()?;
         // if last_commit is Commit::Default, it is considered nil by Go.
         let last_commit = value
             .last_commit
@@ -64,9 +64,9 @@ impl TryFrom<RawBlock> for Block {
             .transpose()?
             .filter(|c| c != &Commit::default());
         if last_commit.is_none() && header.height.value() != 1 {
-            return Err(Error::invalid_block(
-                "last_commit is empty on non-first block".to_string(),
-            ));
+            return Err(Error::InvalidBlock {
+                reason: "last_commit is empty on non-first block".to_string(),
+            });
         }
         // Todo: Figure out requirements.
         // if last_commit.is_some() && header.height.value() == 1 {
@@ -75,11 +75,8 @@ impl TryFrom<RawBlock> for Block {
         //}
         Ok(Block {
             header,
-            data: value.data.ok_or_else(Error::missing_data)?.txs,
-            evidence: value
-                .evidence
-                .ok_or_else(Error::missing_evidence)?
-                .try_into()?,
+            data: value.data.ok_or(Error::MissingData)?.txs,
+            evidence: value.evidence.ok_or(Error::MissingEvidence)?.try_into()?,
             last_commit,
         })
     }
@@ -106,14 +103,14 @@ impl Block {
         last_commit: Option<Commit>,
     ) -> Result<Self, Error> {
         if last_commit.is_none() && header.height.value() != 1 {
-            return Err(Error::invalid_block(
-                "last_commit is empty on non-first block".to_string(),
-            ));
+            return Err(Error::InvalidBlock {
+                reason: "last_commit is empty on non-first block".to_string(),
+            });
         }
         if last_commit.is_some() && header.height.value() == 1 {
-            return Err(Error::invalid_block(
-                "last_commit is filled on first block".to_string(),
-            ));
+            return Err(Error::InvalidBlock {
+                reason: "last_commit is filled on first block".to_string(),
+            });
         }
         Ok(Block {
             header,

@@ -82,10 +82,10 @@ impl FromStr for Hash {
         // Accept either upper or lower case hex
         let bytes = hex::decode_upper(s)
             .or_else(|_| hex::decode(s))
-            .map_err(Error::subtle_encoding)?;
+            .map_err(Error::SubtleEncoding)?;
 
         if bytes.len() != LENGTH {
-            return Err(Error::invalid_hash_size());
+            return Err(Error::InvalidHashSize);
         }
 
         let mut result_bytes = [0u8; LENGTH];

@@ -36,9 +36,9 @@ impl TryFrom<RawCanonicalVote> for CanonicalVote {
 
     fn try_from(value: RawCanonicalVote) -> Result<Self, Self::Error> {
         if value.timestamp.is_none() {
-            return Err(Error::missing_timestamp());
+            return Err(Error::MissingTimestamp);
         }
-        let _val: i32 = value.round.try_into().map_err(Error::integer_overflow)?;
+        let _val: i32 = value.round.try_into().map_err(Error::IntegerOverflow)?;
 
         // If the Hash is empty in BlockId, the BlockId should be empty.
         // See: https://github.com/informalsystems/tendermint-rs/issues/663

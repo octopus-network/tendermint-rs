@@ -93,7 +93,7 @@ impl TryFrom<RawHeader> for Header {
         // height").into());
         //}
         if last_block_id.is_some() && height.value() == 1 {
-            return Err(Error::invalid_first_header());
+            return Err(Error::InvalidFirstHeader);
         }
         // if last_commit_hash.is_none() && height.value() != 1 {
         //    return Err(Kind::InvalidHeader.context("last_commit_hash is null on non-first
@@ -113,13 +113,10 @@ impl TryFrom<RawHeader> for Header {
         // height").into());
         //}
         Ok(Header {
-            version: value.version.ok_or_else(Error::missing_version)?.into(),
+            version: value.version.ok_or(Error::MissingVersion)?.into(),
             chain_id: value.chain_id.try_into()?,
             height,
-            time: value
-                .time
-                .ok_or_else(Error::missing_timestamp)?
-                .try_into()?,
+            time: value.time.ok_or(Error::MissingTimestamp)?.try_into()?,
             last_block_id,
             last_commit_hash,
             data_hash: if value.data_hash.is_empty() {

@@ -38,8 +38,8 @@ impl ServerBuilder {
         Addr: ToSocketAddrs,
         App: Application,
     {
-        let listener = TcpListener::bind(addr).map_err(Error::io)?;
-        let local_addr = listener.local_addr().map_err(Error::io)?.to_string();
+        let listener = TcpListener::bind(addr).map_err(Error::Io)?;
+        let local_addr = listener.local_addr().map_err(Error::Io)?.to_string();
         info!("ABCI server running at {}", local_addr);
         Ok(Server {
             app,
@@ -75,7 +75,7 @@ impl<App: Application> Server<App> {
     /// Initiate a blocking listener for incoming connections.
     pub fn listen(self) -> Result<(), Error> {
         loop {
-            let (stream, addr) = self.listener.accept().map_err(Error::io)?;
+            let (stream, addr) = self.listener.accept().map_err(Error::Io)?;
             let addr = addr.to_string();
             info!("Incoming connection from: {}", addr);
             self.spawn_client_handler(stream, addr);

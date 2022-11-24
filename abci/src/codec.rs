@@ -79,7 +79,7 @@ where
             // more
             let bytes_read = match self.stream.read(self.read_window.as_mut()) {
                 Ok(br) => br,
-                Err(e) => return Some(Err(Error::io(e))),
+                Err(e) => return Some(Err(Error::Io(e))),
             };
             if bytes_read == 0 {
                 // The underlying stream terminated
@@ -103,10 +103,10 @@ where
             let bytes_written = self
                 .stream
                 .write(self.write_buf.as_ref())
-                .map_err(Error::io)?;
+                .map_err(Error::Io)?;
 
             if bytes_written == 0 {
-                return Err(Error::io(std::io::Error::new(
+                return Err(Error::Io(std::io::Error::new(
                     std::io::ErrorKind::WriteZero,
                     "failed to write to underlying stream",
                 )));
@@ -114,7 +114,7 @@ where
             self.write_buf.advance(bytes_written);
         }
 
-        self.stream.flush().map_err(Error::io)?;
+        self.stream.flush().map_err(Error::Io)?;
 
         Ok(())
     }
@@ -127,7 +127,7 @@ where
     B: BufMut,
 {
     let mut buf = BytesMut::new();
-    message.encode(&mut buf).map_err(Error::encode)?;
+    message.encode(&mut buf).map_err(Error::Encode)?;
 
     let buf = buf.freeze();
     prost::encoding::encode_varint(buf.len() as u64, &mut dst);
@@ -146,7 +146,7 @@ where
         Ok(len) => len,
         // We've potentially only received a partial length delimiter
         Err(_) if src_len <= MAX_VARINT_LENGTH => return Ok(None),
-        Err(e) => return Err(Error::decode(e)),
+        Err(e) => return Err(Error::Decode(e)),
     };
     let remaining = tmp.remaining() as u64;
     if remaining < encoded_len {
@@ -159,7 +159,7 @@ where
         src.advance(delim_len + (encoded_len as usize));
 
         let mut result_bytes = BytesMut::from(tmp.split_to(encoded_len as usize).as_ref());
-        let res = M::decode(&mut result_bytes).map_err(Error::decode)?;
+        let res = M::decode(&mut result_bytes).map_err(Error::Decode)?;
 
         Ok(Some(res))
     }

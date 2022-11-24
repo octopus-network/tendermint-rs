@@ -152,7 +152,7 @@ impl From<core::convert::Infallible> for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn flex_error::StdError + 'static)> {
         match &self {
-            Error::ParseInt { e , ..} => Some(e),
+            Error::ParseInt { e, .. } => Some(e),
             Error::NegativeHeight(e) => Some(e),
             Error::NegativeRound(e) => Some(e),
             Error::NegativeValidatorIndex(e) => Some(e),
